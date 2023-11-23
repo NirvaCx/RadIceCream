@@ -1,0 +1,11 @@
+tutorial de conversão do victor hugo:
+https://www.youtube.com/watch?v=mBmOkyqejHU&list=PLL0Kob75DU32afhLBN5nY2KzOJ5k6lw-Q&index=1&ab_channel=VictorLisboa
+
+hooktheory (at doom's gate):
+https://www.hooktheory.com/theorytab/view/bobby-prince/at-dooms-gate---doom
+
+script de hooktheory para riscv midi:
+https://gist.github.com/davipatury/cc32ee5b5929cb6d1b682d21cd89ae83
+
+midi to .txt (rafik testando, ignore):
+https://github.com/TheAussieTinker/MIDI2txt
