@@ -1,0 +1,16 @@
+v0:
+- initial framework
+- contains only the matrix-render interface and the renderer itself
+
+v1:
+- introduced the clock and frame updates
+
+v2:
+
+- introduced the player, collectibles, reorganized functions and code
+- introduced movement
+
+v3:
+
+- slight code simplification
+- better documentation
