@@ -14,3 +14,8 @@ v3:
 
 - slight code simplification
 - better documentation
+
+v4: - 25/11/2023
+
+- new sprites and infrastructure for sprite creation is now (temporarily, most likely) inside the project within separate folders.
+- player movement now also changes the direction the player's sprite is facing
