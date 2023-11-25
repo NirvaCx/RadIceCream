@@ -11,8 +11,6 @@
 .include "sprites/char2.data"
 .include "sprites/char3.data"
 
-
-
 mapwidth:
 .word	20
 mapheight:
@@ -27,6 +25,9 @@ tempheight:
 playerState:
 .word	1
 # states up, down, left and right are 0, 1, 2 and 3 respectively
+playerBreaking:
+.word	0
+# boolean value - is the player pressing space?
 playerPosX:
 .word	12
 playerPosY:
@@ -53,6 +54,9 @@ gameLoop:
 	
 	# movement code can probably be reused for enemy movement by substituting "playerState" for "elementState"
 	# this can generalize many things which would otherwise become huge amounts of code
+	
+	mv	a3, zero
+	# reset a3 for safety purposes (it is only used by display print and is never reset anywhere)
 	
 getInput:
 	lw	t0, keyboardAddress
@@ -90,6 +94,8 @@ continueInput:
 	beq	t1, t2, moveLt
 	li	t2, 0x064
 	beq	t1, t2, moveRt
+	li	t2, 0x20
+	beq	t1, t2, doSpecial
 	# if the input was not in the selector, no action is performed
 	j	outInput
 	
@@ -116,6 +122,12 @@ moveLt:
 	sw	s0, playerState, s1
 	j	movePlayer
 moveRt:
+	li	t3, 1
+	lw	s0, playerState
+	li	s0, 3
+	sw	s0, playerState, s1
+	j	movePlayer
+doSpecial:
 	li	t3, 1
 	lw	s0, playerState
 	li	s0, 3
@@ -256,34 +268,15 @@ renderCollectible:
 	j	continueRW
 
 renderPlayer:
-	lw	t3, playerState
-	beq	t3, zero, pstate0
-	li	t4, 1
-	beq	t3, t4, pstate1
-	li	t4, 2
-	beq	t3, t4, pstate2
-	li	t4, 3
-	beq	t3, t4, pstate3
-	j	continueRW
-pstate0:	
-	la	a2, char0
-	jal	displayPrint
-	j	continueRW
+	# render selector (now using a spritesheet)
+	lw	a3, playerState
+	li	t3, 16
+	mul	a3, t4, a3
+	lw	t3, playerBreaking
+	beq	t3, zero, noBreak
 	
-pstate1:
-	la	a2, char1
-	jal	displayPrint
-	j	continueRW
-	
-pstate2:
-	la	a2, char2
-	jal	displayPrint
-	j	continueRW
-	
-pstate3:
-	la	a2, char3
-	jal	displayPrint
-	j	continueRW
+noBreak:
+
 	
 continueRW:
 	lw	t0, tempwidth
@@ -335,6 +328,7 @@ displayPrint:
 	# a0 = bitmap display x position (from the left)
 	# a1 = bitmap display y position (from the top)
 	# a2 = image pointer
+	# a3 = image selector (for spritesheets)
 	
 	lw	t5, 0(a2)
 	# t5 = width (x) of image
@@ -342,7 +336,9 @@ displayPrint:
 	lw	t6, 0(a2)
 	# t6 = height (y) of image
 	addi	a2, a2, 4
-	# t0 = start of image pixel information
+	# a2 = start of image pixel information
+	add	a2, a3, a2
+	# select image using a3
 	
 	# illegal printing prevention below
 	
