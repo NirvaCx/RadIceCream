@@ -4,8 +4,14 @@
 
 .include "sprites/level1_bg.data"
 .include "sprites/empty.data"
+.include "sprites/breakable.data"
 .include "sprites/collectible_1.data"
 .include "sprites/char0.data"
+.include "sprites/char1.data"
+.include "sprites/char2.data"
+.include "sprites/char3.data"
+
+
 
 mapwidth:
 .word	20
@@ -225,6 +231,9 @@ renderWidthLoop:
 	beq	t2, t3, renderEmpty
 	# unbreakable blocks also render empty cells
 	
+	li	t3, 2
+	beq	t2, t3, renderBreakable
+	
 	li	t3, 3
 	beq	t2, t3, renderCollectible
 
@@ -235,6 +244,11 @@ renderEmpty:
 	la	a2, empty
 	jal	displayPrint
 	j	continueRW
+	
+renderBreakable:
+	la	a2, breakable
+	jal	displayPrint
+	j	continueRW
 
 renderCollectible:
 	la	a2, collectible_1
@@ -242,10 +256,35 @@ renderCollectible:
 	j	continueRW
 
 renderPlayer:
+	lw	t3, playerState
+	beq	t3, zero, pstate0
+	li	t4, 1
+	beq	t3, t4, pstate1
+	li	t4, 2
+	beq	t3, t4, pstate2
+	li	t4, 3
+	beq	t3, t4, pstate3
+	j	continueRW
+pstate0:	
 	la	a2, char0
 	jal	displayPrint
 	j	continueRW
-
+	
+pstate1:
+	la	a2, char1
+	jal	displayPrint
+	j	continueRW
+	
+pstate2:
+	la	a2, char2
+	jal	displayPrint
+	j	continueRW
+	
+pstate3:
+	la	a2, char3
+	jal	displayPrint
+	j	continueRW
+	
 continueRW:
 	lw	t0, tempwidth
 	lw	t1, tempheight
