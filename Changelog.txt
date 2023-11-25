@@ -19,3 +19,9 @@ v4: - 25/11/2023
 
 - new sprites and infrastructure for sprite creation is now (temporarily, most likely) inside the project within separate folders.
 - player movement now also changes the direction the player's sprite is facing
+
+v5: - 25/11/2023
+
+- reworked sprite and render system to allow for spritesheets
+- playerstates are extremely modular as a result of the change above, and code was dramatically simplified
+- condensed char sprites into "char.data"
