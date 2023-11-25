@@ -6,10 +6,7 @@
 .include "sprites/empty.data"
 .include "sprites/breakable.data"
 .include "sprites/collectible_1.data"
-.include "sprites/char0.data"
-.include "sprites/char1.data"
-.include "sprites/char2.data"
-.include "sprites/char3.data"
+.include "sprites/char.data"
 
 mapwidth:
 .word	20
@@ -55,8 +52,9 @@ gameLoop:
 	# movement code can probably be reused for enemy movement by substituting "playerState" for "elementState"
 	# this can generalize many things which would otherwise become huge amounts of code
 	
-	mv	a3, zero
-	# reset a3 for safety purposes (it is only used by display print and is never reset anywhere)
+	lw	s0, playerBreaking
+	li	s0, 0
+	sw	s0, playerBreaking, s1
 	
 getInput:
 	lw	t0, keyboardAddress
@@ -129,10 +127,10 @@ moveRt:
 	j	movePlayer
 doSpecial:
 	li	t3, 1
-	lw	s0, playerState
-	li	s0, 3
-	sw	s0, playerState, s1
-	j	movePlayer
+	lw	s0, playerBreaking
+	li	s0, 1
+	sw	s0, playerBreaking, s1
+	j	outInput
 
 movePlayer:
 	# t4 is target cell pointer
@@ -269,14 +267,17 @@ renderCollectible:
 
 renderPlayer:
 	# render selector (now using a spritesheet)
-	lw	a3, playerState
-	li	t3, 16
-	mul	a3, t4, a3
+	li	a3, 256
+	lw	t3, playerState
+	mul	a3, t3, a3
 	lw	t3, playerBreaking
 	beq	t3, zero, noBreak
-	
+	li	t3, 1024
+	add	a3, t3, a3
 noBreak:
-
+	la	a2, char
+	jal	displayPrint
+	j	continueRW
 	
 continueRW:
 	lw	t0, tempwidth
@@ -391,4 +392,6 @@ xEnd:
 	# increment currentY
 	j	yLoop	
 displayPrintEnd:
+	mv	a3, zero
+	# reset a3 for safety purposes (it is only used by display print and is never reset anywhere)
 	ret
