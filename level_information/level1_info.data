@@ -1,0 +1,34 @@
+level1_info:
+l1enemyAmount:
+	# 0
+.word	0
+l1enemyPositions:
+	# 4
+.byte	
+	0, 0, 
+	0, 0, 
+	0, 0, 
+	0, 0, 
+	0, 0, 
+	0, 0, 
+	0, 0, 
+	0, 0
+l1enemyTypes:
+	# 20
+.byte	
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0
+l1playerPosition:
+	# 28
+	# x, y
+.word	
+	12, 3
+l1collectibleCount:
+	# 36
+.word	10

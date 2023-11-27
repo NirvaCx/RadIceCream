@@ -2,12 +2,29 @@
 
 .include "level_information/level1.data"
 .include "level_information/level1_bg.data"
+.include "level_information/level1_info.data"
 
 .include "sprites/empty.data"
 .include "sprites/breakable.data"
 .include "sprites/collectible_1.data"
 .include "sprites/breakable_c.data"
 .include "sprites/char.data"
+
+# levelLoader data
+currentLevel:
+.space	308	# 20 * 15 bytes + 2 words
+levelBackground:
+.space	76808	# 320 * 240 bytes + 2 words
+enemyAmount:
+.word	0
+enemyPositions:
+.space	16
+enemyTypes:
+.space	8
+playerPosition:
+.space	8
+collectibleCount:
+.word	0
 
 mapwidth:
 .word	20
@@ -27,9 +44,9 @@ playerBreaking:
 .word	0
 # boolean value - is the player pressing space?
 playerPosX:
-.word	12
+.word	0
 playerPosY:
-.word	3
+.word	0
 points:
 .word	0
 # player variables
@@ -47,6 +64,134 @@ keyboardAddress:
 # input variables
 
 .text
+load1:
+	la	a0, level1
+	la	a1, level1_bg
+	la	a2, level1_info
+	j	levelLoader
+
+levelLoader:
+	# a0 = level matrix
+	# a1 = level background image
+	# a2 = level information file
+	# a3 = level collectible update matrix (TBA)
+	
+	li	t0, 1
+	sw	t0, playerState, t1
+	# reset playerState
+	li	t0, 0
+	sw	t0, points, t1
+	# reset points
+	
+	# copy from level data to currentLevel
+	la	s0, currentLevel
+	lw	t0, 0(a0)
+	sw	t0, 0(s0)
+	# t0 = width
+	lw	t1, 4(a0)
+	sw	t1, 4(s0)
+	# t1 = height
+	li	t2, 0
+	li	t3, 0
+	# t2 = current x
+	# t3 = current y
+	addi	s0, s0, 8
+	addi	a0, a0, 8
+levelYloop:
+	bge	t3, t1, levelYloopEnd
+	li	t2, 0
+levelXloop:
+	bge	t2, t0, levelXloopEnd
+	lw	t4, 0(a0)
+	sw	t4, 0(s0)
+	# copy from level data pointer to currentLevel data pointer
+	addi	a0, a0, 4
+	addi	s0, s0, 4
+	addi	t2, t2, 4
+	j	levelXloop
+levelXloopEnd:
+	addi	t3, t3, 1
+	j	levelYloop
+levelYloopEnd:
+
+getBackground:
+	# copy background data to levelBackground
+	la	s0, levelBackground
+	lw	t0, 0(a1)
+	sw	t0, 0(s0)
+	# t0 = width
+	lw	t1, 4(a1)
+	sw	t1, 4(s0)
+	# t1 = height
+	li	t2, 0
+	li	t3, 0
+	# t2 = current x
+	# t3 = current y
+	addi	s0, s0, 8
+	addi	a1, a1, 8
+bgYloop:
+	bge	t3, t1, bgYloopEnd
+	li	t2, 0
+bgXloop:
+	bge	t2, t0, bgXloopEnd
+	lw	t4, 0(a1)
+	sw	t4, 0(s0)
+	# copy 4 pixels from background pointer to levelBackground pointer
+	addi	a1, a1, 4
+	addi	s0, s0, 4
+	addi	t2, t2, 4
+	j	bgXloop
+bgXloopEnd:
+	addi	t3, t3, 1
+	j	bgYloop
+bgYloopEnd:
+
+getInfo:
+	# collect enemy amount
+	lw	s0, 0(a2)
+	sw	s0, enemyAmount, t0
+	addi	a2, a2, 4
+	# move to enemy positions
+	li	t0, 16
+	# enemy position is 4 words long (allows for 8 enemies total)
+	li	t1, 0
+	la	s0, enemyPositions
+	# counter
+	# collect enemy positions
+loadEnemyPos:
+	bge	t1, t0, loadEnemyPosEnd
+	lw	s1, 0(a2)
+	sw	s1, 0(s0)
+	addi	a2, a2, 4
+	addi	s0, s0, 4
+	addi	t1, t1, 4
+	j	loadEnemyPos
+loadEnemyPosEnd:
+	# collect enemy types
+	la	s0, enemyTypes
+	lw	s1, 0(a2)
+	sw	s1, 0(s0)
+	addi	s0, s0, 4
+	addi	a2, a2, 4
+	lw	s1, 0(a2)
+	sw	s1, 0(s0)
+	addi	a2, a2, 4
+	# collect player position
+	la	s0, playerPosX
+	lw	s1, 0(a2)
+	sw	s1, 0(s0)
+	
+	addi	a2, a2, 4
+	
+	la	s0, playerPosY
+	lw	s1, 0(a2)
+	sw	s1, 0(s0)
+	
+	addi	a2, a2, 4
+	# init collectible amount
+	la	s0, collectibleCount
+	lw	s1, 0(a2)
+	sw	s1, 0(a2)
 
 gameLoop:
 	
@@ -80,7 +225,7 @@ continueInput:
 	mul	t0, t0, t2
 	lw	t2, playerPosX
 	add	t0, t0, t2
-	la	t2, level1
+	la	t2, currentLevel
 	addi	t2, t2, 8
 	add	t0, t0, t2
 	
@@ -139,21 +284,23 @@ movePlayer:
 	# t1 is whatever is contained in target cell
 	lb	t1, 0(t4)
 	li	t2, 5
-	beq	t1, t2, gameOver
+	bne	t1, t2, continueMovement0
+	j	gameOver
+continueMovement0:
 	# collision with ID 5 (enemy) results in a gameover
 	li	t2, 3
 	bne	t1, t2, noPoint
 	lw	s0, points
-	addi	s0, s0, 1
+	addi	s0, s0, 100
 	sw	s0, points, s1
-	j	continueMovement
+	j	continueMovement1
 	# collision with a collectible will replace the collectible with empty space,
-	# add a point and finish the movement algorithm
+	# add 100 points and finish the movement algorithm
 noPoint:
 	bne	t1, zero, outInput
 	# since the only cells towards which you can move other than collectibles are empty cells,
 	# we can cancel the movement algorithm if the cell is not empty
-continueMovement:
+continueMovement1:
 	mv	t1, zero
 	sb	t1, 0(t0)
 	li	t1, 9
@@ -198,17 +345,17 @@ outInput:
 	
 	
 backgroundRender:
-	# render background map
+	# render background (must remove offset later due to new menu)
 	li	a0, 64
 	mv	a1, zero
-	la	a2, level1_bg
+	la	a2, levelBackground
 	jal	displayPrint
 	
 mapRender:
-	# initialize level1 information
-	la	s0, level1
+	# initialize level information
+	la	s0, currentLevel
 	addi	s0, s0, 8
-	# s0 now points to level1 matrix data
+	# s0 now points to level matrix data
 	lw	s1, mapwidth
 	# s1 = mapwidth
 	lw	s2, mapheight

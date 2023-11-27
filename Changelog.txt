@@ -25,3 +25,7 @@ v5: - 25/11/2023
 - reworked sprite and render system to allow for spritesheets
 - playerstates are extremely modular as a result of the change above, and code was dramatically simplified
 - condensed char sprites into "char.data"
+
+v6: - 27/11/2023
+
+- overhauled level loading system to allow for multiple levels.
