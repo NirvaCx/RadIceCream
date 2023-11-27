@@ -1,11 +1,12 @@
 .data
 
-.include "maps/map1.data"
+.include "level_information/level1.data"
+.include "level_information/level1_bg.data"
 
-.include "sprites/level1_bg.data"
 .include "sprites/empty.data"
 .include "sprites/breakable.data"
 .include "sprites/collectible_1.data"
+.include "sprites/breakable_c.data"
 .include "sprites/char.data"
 
 mapwidth:
@@ -79,7 +80,7 @@ continueInput:
 	mul	t0, t0, t2
 	lw	t2, playerPosX
 	add	t0, t0, t2
-	la	t2, map1
+	la	t2, level1
 	addi	t2, t2, 8
 	add	t0, t0, t2
 	
@@ -204,10 +205,10 @@ backgroundRender:
 	jal	displayPrint
 	
 mapRender:
-	# initialize map1 information
-	la	s0, map1
+	# initialize level1 information
+	la	s0, level1
 	addi	s0, s0, 8
-	# s0 now points to map1 matrix data
+	# s0 now points to level1 matrix data
 	lw	s1, mapwidth
 	# s1 = mapwidth
 	lw	s2, mapheight
@@ -246,6 +247,9 @@ renderWidthLoop:
 	
 	li	t3, 3
 	beq	t2, t3, renderCollectible
+	
+	li	t3, 4
+	beq	t2, t3, renderBreakableC
 
 	li	t3, 9
 	beq	t2, t3, renderPlayer
@@ -262,6 +266,11 @@ renderBreakable:
 
 renderCollectible:
 	la	a2, collectible_1
+	jal	displayPrint
+	j	continueRW
+
+renderBreakableC:
+	la	a2, breakable_c
 	jal	displayPrint
 	j	continueRW
 
