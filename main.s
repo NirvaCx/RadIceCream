@@ -21,6 +21,16 @@ enemyPositions:
 .space	16
 enemyTypes:
 .space	8
+enemyStates:
+.byte
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0
 playerPosition:
 .space	8
 collectibleCount:
@@ -48,6 +58,8 @@ playerPosX:
 playerPosY:
 .word	0
 points:
+.word	0
+playerEnergy:
 .word	0
 # player variables
 
@@ -82,6 +94,19 @@ levelLoader:
 	li	t0, 0
 	sw	t0, points, t1
 	# reset points
+	
+	# reset enemy states
+	la	s0, enemyStates
+	li	t0, 8
+	li	t1, 0
+	li	t2, 1
+enemyReset:
+	bge	t1, t0, endEnemyReset
+	sb	t2, 0(s0)
+	addi	t1, t1, 1
+	addi	s0, s0, 1
+	j	enemyReset
+endEnemyReset:
 	
 	# copy from level data to currentLevel
 	la	s0, currentLevel
@@ -193,14 +218,60 @@ loadEnemyPosEnd:
 	lw	s1, 0(a2)
 	sw	s1, 0(a2)
 
-gameLoop:
+	# reset ticker
+	li	s11, 0
+	# reset player energy
+	li	t0, 10
+	sw	t0, playerEnergy, t1
 	
+	
+gameLoop:
 	# movement code can probably be reused for enemy movement by substituting "playerState" for "elementState"
 	# this can generalize many things which would otherwise become huge amounts of code
+	# s11 will be used as a ticker as it will be updated frequently
 	
+	
+	
+	
+	li	t0, 200
+	bge	s11, t0, resetTicker
+	# reset ticker if it reaches 200 (every ~10 seconds)
+	j	outResetTicker
+resetTicker:
+	li	s11, 0
+outResetTicker:
+
+
+
+
+	# player stamina system core
+	# used in move and special functions
+	# energy capped at 10, regenerates 1 point every tick. player may only
+	# move or perform a special when it is equal to 10
+	lw	s0, playerEnergy
+	li	t1, 10
+	blt	s0, t1, addEnergy
+	j	outAddEnergy
+addEnergy:
+	addi	s0, s0, 1
+	sw	s0, playerEnergy, s1
+outAddEnergy:
+	
+	
+	
+	
+	# maintain breaking state while energy hasn't yet recovered
+	lw	t0, playerEnergy
+	bge	t0, t1, resetPlayerBreaking
+	j	outResetPlayerBreaking
+resetPlayerBreaking:
 	lw	s0, playerBreaking
 	li	s0, 0
 	sw	s0, playerBreaking, s1
+outResetPlayerBreaking:
+
+
+
 	
 getInput:
 	lw	t0, keyboardAddress
@@ -272,13 +343,30 @@ moveRt:
 	sw	s0, playerState, s1
 	j	movePlayer
 doSpecial:
-	li	t3, 1
+
+	# energy code below is a placeholder while block breaking function isn't ready
+	# only allow special if energy is full
+	li	t4, 10
+	lw	s0, playerEnergy
+	blt	s0, t4, outInput
+	# reset playerEnergy
+	li	s0, 0
+	sw	s0, playerEnergy, s1
+	
 	lw	s0, playerBreaking
 	li	s0, 1
 	sw	s0, playerBreaking, s1
 	j	outInput
 
 movePlayer:
+	# only allow movement if energy is full
+	li	t4, 10
+	lw	s0, playerEnergy
+	blt	s0, t4, outInput
+	
+	# reset playerEnergy
+	li	s0, 0
+	sw	s0, playerEnergy, s1
 	# t4 is target cell pointer
 	add	t4, t0, t3
 	# t1 is whatever is contained in target cell
@@ -342,11 +430,16 @@ moveRt2:
 	sw	s0, playerPosX, t3
 	j	outInput
 outInput:
+
+
+
+
+
 	
 	
 backgroundRender:
 	# render background (must remove offset later due to new menu)
-	li	a0, 64
+	mv	a0, zero
 	mv	a1, zero
 	la	a2, levelBackground
 	jal	displayPrint
@@ -467,8 +560,10 @@ mapRenderEnd:
 	sw	t2, 0(t1)
 	
 	# define tickrate
+	addi	s11, s11, 1
+	
 	li	a7, 32
-	li	a0, 100
+	li	a0, 50
 	ecall
 
 continueLoop: j gameLoop

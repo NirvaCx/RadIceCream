@@ -1,4 +1,4 @@
-# Spritesheet: jump is 128
+# Spritesheet: jump is 128, 10 images
 numbers: .word 8, 16
 .byte 199,199,199,199,199,199,199,199,
 199,175,175,175,175,175,199,199,
