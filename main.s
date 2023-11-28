@@ -6,7 +6,7 @@
 
 .include "sprites/empty.data"
 .include "sprites/breakable.data"
-.include "sprites/collectible_1.data"
+.include "sprites/collectibles.data"
 .include "sprites/breakable_c.data"
 .include "sprites/char.data"
 
@@ -505,7 +505,7 @@ renderBreakable:
 	j	continueRW
 
 renderCollectible:
-	la	a2, collectible_1
+	la	a2, collectibles
 	jal	displayPrint
 	j	continueRW
 
