@@ -38,3 +38,8 @@ v7: - 28/11/2023
 - fixed strange visual flickering when performing special (spacebar)
 - reorganized some sprites into spritesheets for later use
 - documentation updated
+
+v8 - 29/11/2023
+
+- modularized stamina system (now, changing max stamina only requires changing the constant in memory)
+- introduced basic player special functionality - breaking and building blocks (no animation)

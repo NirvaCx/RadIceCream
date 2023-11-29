@@ -61,6 +61,8 @@ points:
 .word	0
 playerEnergy:
 .word	0
+maxPlayerEnergy:
+.word	8
 # player variables
 
 currentframeaddress:
@@ -74,6 +76,12 @@ currentInput:
 keyboardAddress:
 .word	0xff200000
 # input variables
+
+lookAheadPointer:
+.word	20
+# used by doSpecial
+
+# other variables
 
 .text
 load1:
@@ -249,7 +257,7 @@ outResetTicker:
 	# energy capped at 10, regenerates 1 point every tick. player may only
 	# move or perform a special when it is equal to 10
 	lw	s0, playerEnergy
-	li	t1, 10
+	lw	t1, maxPlayerEnergy
 	blt	s0, t1, addEnergy
 	j	outAddEnergy
 addEnergy:
@@ -320,33 +328,36 @@ continueInput:
 	# they also update the player's state accordingly
 moveUp:
 	li	t3, -20
+	sw	t3, lookAheadPointer, t4
 	lw	s0, playerState
 	li	s0, 0
 	sw	s0, playerState, s1
 	j	movePlayer
 moveDn:
 	li	t3, 20
+	sw	t3, lookAheadPointer, t4
 	lw	s0, playerState
 	li	s0, 1
 	sw	s0, playerState, s1
 	j	movePlayer
 moveLt:
 	li	t3, -1
+	sw	t3, lookAheadPointer, t4
 	lw	s0, playerState
 	li	s0, 2
 	sw	s0, playerState, s1
 	j	movePlayer
 moveRt:
 	li	t3, 1
+	sw	t3, lookAheadPointer, t4
 	lw	s0, playerState
 	li	s0, 3
 	sw	s0, playerState, s1
 	j	movePlayer
+	
 doSpecial:
-
-	# energy code below is a placeholder while block breaking function isn't ready
 	# only allow special if energy is full
-	li	t4, 10
+	lw	t4, maxPlayerEnergy
 	lw	s0, playerEnergy
 	blt	s0, t4, outInput
 	# reset playerEnergy
@@ -356,11 +367,57 @@ doSpecial:
 	lw	s0, playerBreaking
 	li	s0, 1
 	sw	s0, playerBreaking, s1
+	
+	lw	t3, lookAheadPointer
+	# t3 is the constant increment that will be used to "walk" to the next block
+	
+	add	t4, t0, t3
+	li	t6, 0
+	# t6 is a flag for whether or not one of the functions has already run
+	# e.g. playerDestroy should NOT run if playerBuild did run
+	# t4 is target cell pointer; t1 is whatever is contained in that cell
+playerBuild:
+	lb	t1, 0(t4)
+	li	t5, 0
+	beq	t1, t5, buildBreakable
+	li	t5, 3
+	beq	t1, t5, buildBreakable_c
+	beq	t6, zero, playerDestroy
 	j	outInput
+buildBreakable:
+	li	t1, 2
+	sb	t1, 0(t4)
+	add	t4, t4, t3
+	li	t6, 1
+	j	playerBuild
+buildBreakable_c:
+	li	t1, 4
+	sb	t1, 0(t4)
+	add	t4, t4, t3
+	li	t6, 1
+	j	playerBuild
+
+playerDestroy:
+	lb	t1, 0(t4)
+	li	t5, 2
+	beq	t1, t5, destroyBreakable
+	li	t5, 4
+	beq	t1, t5, destroyBreakable_c
+	j	outInput
+destroyBreakable:
+	li	t1, 0
+	sb	t1, 0(t4)
+	add	t4, t4, t3
+	j	playerDestroy
+destroyBreakable_c:
+	li	t1, 3
+	sb	t1, 0(t4)
+	add	t4, t4, t3
+	j	playerDestroy
 
 movePlayer:
 	# only allow movement if energy is full
-	li	t4, 10
+	lw	t4, maxPlayerEnergy
 	lw	s0, playerEnergy
 	blt	s0, t4, outInput
 	
