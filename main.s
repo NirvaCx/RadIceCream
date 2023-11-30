@@ -21,7 +21,7 @@ levelBackground:
 enemyAmount:
 .word	0
 enemyPositions:
-.space	16
+.space	24
 enemyTypes:
 .space	8
 enemyStates:
@@ -188,8 +188,8 @@ getInfo:
 	sw	s0, enemyAmount, t0
 	addi	a2, a2, 4
 	# move to enemy positions
-	li	t0, 16
-	# enemy position is 4 words long (allows for 8 enemies total)
+	li	t0, 24
+	# enemy position is 6 words long (allows for 8 enemies total)
 	li	t1, 0
 	la	s0, enemyPositions
 	# counter
