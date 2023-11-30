@@ -358,8 +358,9 @@ continueInput:
 	li	t2, 0x20
 	beq	t1, t2, doSpecial
 	# if the input was not in the selector, no action is performed
-	li	t2, 0x60
+	li	t2, 0x51
 	beq	t1, t2, mainMenuRender
+	# cheat key for going back to level select
 	j	outInput
 	
 	# the four labels below all do the same thing for different movements
