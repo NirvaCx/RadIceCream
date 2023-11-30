@@ -1,0 +1,30 @@
+level2_info:
+l2enemyAmount:
+.word	2
+l2enemyPositions:
+	# x, y, ID
+.byte	
+	7, 4, 0,
+	11, 16, 1,
+	0, 0, 2,
+	0, 0, 3,
+	0, 0, 4,
+	0, 0, 5,
+	0, 0, 6,
+	0, 0, 7
+l2enemyTypes:
+.byte	
+	1,
+	1,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0
+l2playerPosition:
+	# x, y
+.word	
+	12, 7
+l2collectibleCount:
+.word	16

@@ -1,8 +1,13 @@
 .data
 
+.include "level_information/title_screen.data"
+
 .include "level_information/level1.data"
 .include "level_information/level1_bg.data"
 .include "level_information/level1_info.data"
+.include "level_information/level2.data"
+.include "level_information/level2_bg.data"
+.include "level_information/level2_info.data"
 
 .include "sprites/empty.data"
 .include "sprites/breakable.data"
@@ -87,10 +92,40 @@ lookAheadPointer:
 # other variables
 
 .text
+
+mainMenuRender:
+	# render title screen
+	mv	a0, zero
+	mv	a1, zero
+	la	a2, title_screen
+	jal	displayPrint
+	
+	jal	frameSwitch
+
+levelInput:
+	# this function gets input from the keyboard numbers and loads the corresponding level.
+	lw	t0, keyboardAddress
+	lw	t1, 0(t0)
+	andi	t1, t1, 1
+	# check first bit at keyboard address to see if input has been pressed
+	beq	t1, zero, levelInput
+	lb	t1, 4(t0)
+	li	t2, 0x031
+	beq	t1, t2, load1
+	li	t2, 0x032
+	beq	t1, t2, load2
+	j	levelInput
+	
 load1:
 	la	a0, level1
 	la	a1, level1_bg
 	la	a2, level1_info
+	j	levelLoader
+
+load2:
+	la	a0, level2
+	la	a1, level2_bg
+	la	a2, level2_info
 	j	levelLoader
 
 levelLoader:
@@ -323,6 +358,8 @@ continueInput:
 	li	t2, 0x20
 	beq	t1, t2, doSpecial
 	# if the input was not in the selector, no action is performed
+	li	t2, 0x60
+	beq	t1, t2, mainMenuRender
 	j	outInput
 	
 	# the four labels below all do the same thing for different movements
@@ -498,7 +535,6 @@ outInput:
 	
 	
 backgroundRender:
-	# render background (must remove offset later due to new menu)
 	mv	a0, zero
 	mv	a1, zero
 	la	a2, levelBackground
@@ -663,6 +699,25 @@ renderWidthEnd:
 	# increment tempheight by one
 	j	renderHeightLoop
 mapRenderEnd:
+	
+	jal	frameSwitch
+	
+	# define tickrate
+	addi	s11, s11, 1
+	
+	li	a7, 32
+	li	a0, 50
+	ecall
+
+continueLoop: j gameLoop
+
+gameOver:
+
+exitProgram:
+	li	a7, 10
+	ecall
+
+frameSwitch:
 	# frameswitch algorithm
 	# the way rendering works in this game is that the opposite frame is rendered while the current frame
 	# is displayed. This removes weird "line" effects on the display as switching frames is instant
@@ -679,22 +734,7 @@ mapRenderEnd:
 	lw	t2, 0(t1)
 	xori	t2, t2, 1
 	sw	t2, 0(t1)
-	
-	# define tickrate
-	addi	s11, s11, 1
-	
-	li	a7, 32
-	li	a0, 50
-	ecall
 
-continueLoop: j gameLoop
-
-gameOver:
-
-exitProgram:
-	li	a7, 10
-	ecall
-	
 displayPrint:
 	# basic renderer function
 	# utilizes only temporaries
