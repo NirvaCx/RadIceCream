@@ -8,7 +8,10 @@
 .include "sprites/breakable.data"
 .include "sprites/collectibles.data"
 .include "sprites/breakable_c.data"
+.include "sprites/enemy_dudu.data"
 .include "sprites/char.data"
+.include "sprites/building0.data"
+.include "sprites/breaking0.data"
 
 # levelLoader data
 currentLevel:
@@ -385,13 +388,13 @@ playerBuild:
 	beq	t6, zero, playerDestroy
 	j	outInput
 buildBreakable:
-	li	t1, 2
+	li	t1, 10
 	sb	t1, 0(t4)
 	add	t4, t4, t3
 	li	t6, 1
 	j	playerBuild
 buildBreakable_c:
-	li	t1, 4
+	li	t1, 11
 	sb	t1, 0(t4)
 	add	t4, t4, t3
 	li	t6, 1
@@ -405,12 +408,12 @@ playerDestroy:
 	beq	t1, t5, destroyBreakable_c
 	j	outInput
 destroyBreakable:
-	li	t1, 0
+	li	t1, 12
 	sb	t1, 0(t4)
 	add	t4, t4, t3
 	j	playerDestroy
 destroyBreakable_c:
-	li	t1, 3
+	li	t1, 13
 	sb	t1, 0(t4)
 	add	t4, t4, t3
 	j	playerDestroy
@@ -536,8 +539,7 @@ renderWidthLoop:
 	beq	t2, zero, renderEmpty
 
 	li	t3, 1
-	beq	t2, t3, renderEmpty
-	# unbreakable blocks also render empty cells
+	beq	t2, t3, renderUnbreakable
 	
 	li	t3, 2
 	beq	t2, t3, renderBreakable
@@ -547,27 +549,59 @@ renderWidthLoop:
 	
 	li	t3, 4
 	beq	t2, t3, renderBreakableC
+	
+	li	t3, 5
+	beq	t2, t3, renderEnemy
 
 	li	t3, 9
 	beq	t2, t3, renderPlayer
-
+	
+	li	t3, 10
+	beq	t2, t3, renderBuilding
+	li	t3, 11
+	beq	t2, t3, renderBuilding
+	
+	li	t3, 12
+	beq	t2, t3, renderBreaking
+	li	t3, 13
+	beq	t2, t3, renderBreaking
+	
 renderEmpty:
+	li	t2, 0
+	sb	t2, 0(s0)
+	la	a2, empty
+	jal	displayPrint
+	j	continueRW
+
+renderUnbreakable:
 	la	a2, empty
 	jal	displayPrint
 	j	continueRW
 	
 renderBreakable:
+	li	t2, 2
+	sb	t2, 0(s0)
 	la	a2, breakable
 	jal	displayPrint
 	j	continueRW
 
 renderCollectible:
+	li	t2, 3
+	sb	t2, 0(s0)
 	la	a2, collectibles
 	jal	displayPrint
 	j	continueRW
 
 renderBreakableC:
+	li	t2, 4
+	sb	t2, 0(s0)
 	la	a2, breakable_c
+	jal	displayPrint
+	j	continueRW
+	
+renderEnemy:
+	# needs to use t0 and t1 to find out ID of the enemy in this position and render according to state and type
+	la	a2, enemy_dudu
 	jal	displayPrint
 	j	continueRW
 
@@ -584,6 +618,36 @@ noBreak:
 	la	a2, char
 	jal	displayPrint
 	j	continueRW
+
+renderBuilding:
+	lw	t0, playerEnergy
+	lw	t1, maxPlayerEnergy
+	addi	t1, t1, -1
+	blt	t0, t1, renderBuilding1
+finishBuilding:
+	li	t3, 10
+	beq	t2, t3, renderBreakable
+	j	renderBreakableC
+renderBuilding1:
+	la	a2, building0
+	jal	displayPrint
+	j	continueRW
+
+renderBreaking:
+	lw	t0, playerEnergy
+	lw	t1, maxPlayerEnergy
+	addi	t1, t1, -1
+	blt	t0, t1, renderBreaking1
+finishBreaking:
+	li	t3, 12
+	beq	t2, t3, renderEmpty
+	j	renderCollectible
+renderBreaking1:
+	la	a2, breaking0
+	jal	displayPrint
+	j	continueRW
+
+
 	
 continueRW:
 	lw	t0, tempwidth

@@ -43,3 +43,9 @@ v8 - 29/11/2023
 
 - modularized stamina system (now, changing max stamina only requires changing the constant in memory)
 - introduced basic player special functionality - breaking and building blocks (no animation)
+
+v9 - 30/11/2023
+
+- minor artstyle changes
+- minor maprender code changes for futureproofing
+- introduced breaking and building animations for blocks (dependant on playerEnergy)
