@@ -26,14 +26,14 @@ enemyTypes:
 .space	8
 enemyStates:
 .byte
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0
+	0, 0,
+	0, 0,
+	0, 0,
+	0, 0,
+	0, 0,
+	0, 0,
+	0, 0,
+	0, 0
 playerPosition:
 .space	8
 collectibleCount:
