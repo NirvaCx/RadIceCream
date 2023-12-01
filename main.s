@@ -597,9 +597,18 @@ menuRender:
 	
 	# level number renderer
 	la	a2, numbers
+	lw	t0, levelNumber
 	li	a0, 29
 	li	a1, 70
-	lw	t0, levelNumber
+	li	t1, 128
+	mul	a3, t0, t1
+	jal	displayPrint
+	
+	# current collectible renderer
+	la	a2, collectibles
+	lw	t0, currentCollectible
+	li	a0, 24
+	li	a1, 206
 	li	t1, 128
 	mul	a3, t0, t1
 	jal	displayPrint
@@ -770,6 +779,9 @@ renderCollectible:
 	li	t2, 3
 	sb	t2, 0(s0)
 	la	a2, collectibles
+	lw	t2, currentCollectible
+	li	t1, 128
+	mul	a3, t1, t2
 	jal	displayPrint
 	j	continueRW
 
