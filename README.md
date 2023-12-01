@@ -8,3 +8,5 @@ Open terminal in game directory and type in the following:
 ```
 ./fpgrars-x86_64-pc-windows-msvc--unb.exe main.s
 ```
+Make sure you have the latest Microsoft Visual C++ Redist installed on your computer as FPGRARS depends on it<br>
+https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170
