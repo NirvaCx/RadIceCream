@@ -5,4 +5,6 @@ Inspired by BadIceCream by Nitrome
 
 ## How to run
 Open terminal in game directory and type in the following:
-`./fpgrars-x86_64-pc-windows-msvc--unb.exe main.s`
+```
+./fpgrars-x86_64-pc-windows-msvc--unb.exe main.s
+```
