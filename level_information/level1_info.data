@@ -28,3 +28,7 @@ l1playerPosition:
 	12, 3
 l1collectibleCount:
 .word	10
+l1collectibleUpdates:
+.word	1
+l1collectibleTypes:
+.word	0, 1, 0

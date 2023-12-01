@@ -1,6 +1,7 @@
 .data
 
 .include "level_information/title_screen.data"
+.include "sprites/numbers.data"
 
 .include "level_information/level1.data"
 .include "level_information/level1_bg.data"
@@ -42,6 +43,14 @@ enemyStates:
 playerPosition:
 .space	8
 collectibleCount:
+.word	0
+collectibleUpdates:
+.word	0
+collectibleTypes:
+.word	0, 0, 0
+currentCollectible:
+.word	0
+levelNumber:
 .word	0
 
 mapwidth:
@@ -117,12 +126,16 @@ levelInput:
 	j	levelInput
 	
 load1:
+	li	t0, 1
+	sw	t0, levelNumber, t1
 	la	a0, level1
 	la	a1, level1_bg
 	la	a2, level1_info
 	j	levelLoader
 
 load2:
+	li	t0, 2
+	sw	t0, levelNumber, t1
 	la	a0, level2
 	la	a1, level2_bg
 	la	a2, level2_info
@@ -262,7 +275,30 @@ loadEnemyPosEnd:
 	# init collectible amount
 	la	s0, collectibleCount
 	lw	s1, 0(a2)
-	sw	s1, 0(a2)
+	sw	s1, 0(s0)
+	
+	# init collectible updates
+	addi	a2, a2, 4
+	la	s0, collectibleUpdates
+	lw	s1, 0(a2)
+	sw	s1, 0(s0)
+	
+	addi	a2, a2, 4
+	la	s0, collectibleTypes
+	li	t1, 0
+initCollectibleTypes:
+	bgt	t1, s1, outICT
+	lw	s2, 0(a2)
+	sw	s2, 0(s0)
+	addi	a2, a2, 4
+	addi	s0, s0, 4
+	addi	t1, t1, 1
+	j	initCollectibleTypes
+outICT:
+	# init currentCollectible
+	la	s0, collectibleTypes
+	lw	s1, 0(s0)
+	sw	s1, currentCollectible, s0
 
 	# reset ticker
 	li	s11, 0
@@ -270,14 +306,10 @@ loadEnemyPosEnd:
 	li	t0, 10
 	sw	t0, playerEnergy, t1
 	
-	
 gameLoop:
 	# movement code can probably be reused for enemy movement by substituting "playerState" for "elementState"
 	# this can generalize many things which would otherwise become huge amounts of code
 	# s11 will be used as a ticker as it will be updated frequently
-	
-	
-	
 	
 	li	t0, 200
 	bge	s11, t0, resetTicker
@@ -286,9 +318,6 @@ gameLoop:
 resetTicker:
 	li	s11, 0
 outResetTicker:
-
-
-
 
 	# player stamina system core
 	# used in move and special functions
@@ -303,9 +332,6 @@ addEnergy:
 	sw	s0, playerEnergy, s1
 outAddEnergy:
 	
-	
-	
-	
 	# maintain breaking state while energy hasn't yet recovered
 	lw	t0, playerEnergy
 	bge	t0, t1, resetPlayerBreaking
@@ -315,9 +341,6 @@ resetPlayerBreaking:
 	li	s0, 0
 	sw	s0, playerBreaking, s1
 outResetPlayerBreaking:
-
-
-
 	
 getInput:
 	lw	t0, keyboardAddress
@@ -479,9 +502,12 @@ continueMovement0:
 	lw	s0, points
 	addi	s0, s0, 100
 	sw	s0, points, s1
+	lw	s0, collectibleCount
+	addi	s0, s0, -1
+	sw	s0, collectibleCount, s1
 	j	continueMovement1
 	# collision with a collectible will replace the collectible with empty space,
-	# add 100 points and finish the movement algorithm
+	# add 100 points, remove 1 from the collectible counter and finish the movement algorithm
 noPoint:
 	bne	t1, zero, outInput
 	# since the only cells towards which you can move other than collectibles are empty cells,
@@ -528,18 +554,26 @@ moveRt2:
 	sw	s0, playerPosX, t3
 	j	outInput
 outInput:
-
-
-
-
-
 	
-	
+	# collectible updating function (for when the player collects every objective on screen)
+	lw	s0, collectibleCount
+	ble	s0, zero, collectibleUpdate
+	j	backgroundRender
+collectibleUpdate:
+	j	gameOver
+
 backgroundRender:
 	mv	a0, zero
 	mv	a1, zero
 	la	a2, levelBackground
 	jal	displayPrint
+
+menuRender:
+	# Menu positions for reference:
+	# Level Number: Y 70 X 29
+	# Timer Digits: Y 113, X 16, 24, 34, 42 respectively
+	# Score Digits: Y 153, X 17, 25, 33, 41 respectively 
+	# Current Item: Y 206, X 24
 	
 mapRender:
 	# initialize level information
@@ -735,6 +769,7 @@ frameSwitch:
 	lw	t2, 0(t1)
 	xori	t2, t2, 1
 	sw	t2, 0(t1)
+	ret
 
 displayPrint:
 	# basic renderer function
