@@ -94,11 +94,14 @@ keyboardAddress:
 .word	0xff200000
 # input variables
 
+# other variables
+
 lookAheadPointer:
 .word	20
 # used by doSpecial
-
-# other variables
+levelTimer:
+.word	0
+#self explanatory
 
 .text
 
@@ -305,6 +308,9 @@ outICT:
 	# reset player energy
 	li	t0, 10
 	sw	t0, playerEnergy, t1
+	# reset timer
+	li	t0, 1500
+	sw	t0, levelTimer, t1
 	
 gameLoop:
 	# movement code can probably be reused for enemy movement by substituting "playerState" for "elementState"
@@ -318,6 +324,19 @@ gameLoop:
 resetTicker:
 	li	s11, 0
 outResetTicker:
+
+	# decrement timer every second (very approximate)
+	li	t0, 20
+	remu	t0, s11, t0
+	beq	t0, zero, timerDecrement
+	j	outTimerDecrement
+timerDecrement:
+	lw	t0, levelTimer
+	addi	t0, t0, -1
+	sw	t0, levelTimer, t1
+	bne	t0, zero, outTimerDecrement
+	j	gameOver
+outTimerDecrement:
 
 	# player stamina system core
 	# used in move and special functions
@@ -574,6 +593,97 @@ menuRender:
 	# Timer Digits: Y 113, X 16, 24, 34, 42 respectively
 	# Score Digits: Y 153, X 17, 25, 33, 41 respectively 
 	# Current Item: Y 206, X 24
+	# I deeply apologize for how unelegant the following code is.
+	
+	# level number renderer
+	la	a2, numbers
+	li	a0, 29
+	li	a1, 70
+	lw	t0, levelNumber
+	li	t1, 128
+	mul	a3, t0, t1
+	jal	displayPrint
+	
+	# timer renderer
+	la	a2, numbers
+	lw	s0, levelTimer
+	li	a0, 16
+	li	a1, 113
+	li	t1, 600
+	div	t0, s0, t1
+	remu	s0, s0, t1
+	li	t1, 128
+	mul	a3, t0, t1
+	jal	displayPrint
+	
+	la	a2, numbers
+	li	a0, 24
+	li	a1, 113
+	li	t1, 60
+	div	t0, s0, t1
+	remu	s0, s0, t1
+	li	t1, 128
+	mul	a3, t0, t1
+	jal	displayPrint
+	
+	la	a2, numbers
+	li	a0, 34
+	li	a1, 113
+	li	t1, 10
+	div	t0, s0, t1
+	remu	s0, s0, t1
+	li	t1, 128
+	mul	a3, t0, t1
+	jal	displayPrint
+	
+	la	a2, numbers
+	li	a0, 42
+	li	a1, 113
+	mv	t0, s0
+	li	t1, 128
+	mul	a3, t0, t1
+	jal	displayPrint
+	
+	# score renderer
+	lw	s0, points
+	la	a2, numbers
+	li	a0, 17
+	li	a1, 153
+	li	t1, 1000
+	div	t0, s0, t1
+	remu	s0, s0, t1
+	li	t1, 128
+	mul	a3, t0, t1
+	jal	displayPrint
+	
+	la	a2, numbers
+	li	a0, 25
+	li	a1, 153
+	li	t1, 100
+	div	t0, s0, t1
+	remu	s0, s0, t1
+	li	t1, 128
+	mul	a3, t0, t1
+	jal	displayPrint
+	
+	la	a2, numbers
+	li	a0, 33
+	li	a1, 153
+	li	t1, 10
+	div	t0, s0, t1
+	remu	s0, s0, t1
+	li	t1, 128
+	mul	a3, t0, t1
+	jal	displayPrint
+	
+	la	a2, numbers
+	li	a0, 41
+	li	a1, 153
+	mv	t0, s0
+	li	t1, 128
+	mul	a3, t0, t1
+	jal	displayPrint
+	
 	
 mapRender:
 	# initialize level information
