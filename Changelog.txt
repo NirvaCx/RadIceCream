@@ -62,3 +62,11 @@ Changes since v9:
 - preparations for introducing multiple collectibles per level
 - side menu now renders timer and score, as well as current level
 - introduced the timer mechanic, that causes a gameover once it reaches zero.
+
+0.2a - 30/11/2023 
+- mostly art changes 
+- level 3 (final boss) artwork, background and matrix 
+- updated main menu screen artwork
+- added gameover screen and pause menu artwork
+- introduced that multiple collectible per-level matrix thing
+- added the frozen version of every item and also collectible no. 4 - spicy pepper
