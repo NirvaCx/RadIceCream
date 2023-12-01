@@ -49,3 +49,16 @@ v9 - 30/11/2023
 - minor artstyle changes
 - minor maprender code changes for futureproofing
 - introduced breaking and building animations for blocks (dependant on playerEnergy)
+
+0.1a - 30/11/2023
+
+- "Alpha" phase - most features already introduced and only need polishing
+- will be out of alpha once enemies are ready
+Changes since v9:
+- reworked EnemyStates for futureproofing
+- many level loader changes according to new and future features
+- removed leftover document file
+- introduced a primitive, unfinished menu system - mainly for debugging
+- preparations for introducing multiple collectibles per level
+- side menu now renders timer and score, as well as current level
+- introduced the timer mechanic, that causes a gameover once it reaches zero.
