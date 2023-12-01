@@ -150,12 +150,20 @@ levelLoader:
 	# a2 = level information file
 	# a3 = level collectible update matrix (TBA)
 	
+	# reset playerState
 	li	t0, 1
 	sw	t0, playerState, t1
-	# reset playerState
+	# reset points
 	li	t0, 0
 	sw	t0, points, t1
-	# reset points
+	# reset ticker
+	li	s11, 0
+	# reset player energy
+	li	t0, 10
+	sw	t0, playerEnergy, t1
+	# reset timer
+	li	t0, 1500
+	sw	t0, levelTimer, t1
 	
 	# reset enemy states
 	la	s0, enemyStates
@@ -302,15 +310,6 @@ outICT:
 	la	s0, collectibleTypes
 	lw	s1, 0(s0)
 	sw	s1, currentCollectible, s0
-
-	# reset ticker
-	li	s11, 0
-	# reset player energy
-	li	t0, 10
-	sw	t0, playerEnergy, t1
-	# reset timer
-	li	t0, 1500
-	sw	t0, levelTimer, t1
 	
 gameLoop:
 	# movement code can probably be reused for enemy movement by substituting "playerState" for "elementState"
