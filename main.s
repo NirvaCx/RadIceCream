@@ -1,14 +1,18 @@
 .data
 
-.include "level_information/title_screen.data"
+.include "level_information/menu_screens/title_screen.data"
+.include "level_information/menu_screens/pause_overlay.data"
+.include "level_information/menu_screens/gameover.data"
+.include "level_information/menu_screens/victory_screen.data"
 .include "sprites/numbers.data"
 
-.include "level_information/level1.data"
-.include "level_information/level1_bg.data"
-.include "level_information/level1_info.data"
-.include "level_information/level2.data"
-.include "level_information/level2_bg.data"
-.include "level_information/level2_info.data"
+.include "level_information/level_1/level1.data"
+.include "level_information/level_1/level1_bg.data"
+.include "level_information/level_1/level1_info.data"
+
+.include "level_information/level_2/level2.data"
+.include "level_information/level_2/level2_bg.data"
+.include "level_information/level_2/level2_info.data"
 
 .include "sprites/empty.data"
 .include "sprites/breakable.data"
@@ -101,6 +105,8 @@ lookAheadPointer:
 # used by doSpecial
 levelTimer:
 .word	0
+levelPaused:
+.word	0
 #self explanatory
 
 .text
@@ -143,6 +149,14 @@ load2:
 	la	a1, level2_bg
 	la	a2, level2_info
 	j	levelLoader
+	
+restarter:
+	lw	t0, levelNumber
+	li	t1, 1
+	beq	t0, t1, load1
+	li	t1, 2
+	beq	t0, t1, load2
+	j	mainMenuRender
 
 levelLoader:
 	# a0 = level matrix
@@ -150,6 +164,9 @@ levelLoader:
 	# a2 = level information file
 	# a3 = level collectible update matrix (TBA)
 	
+	# reset pause flag
+	li	t0, 0
+	sw	t0, levelPaused, t1
 	# reset playerState
 	li	t0, 1
 	sw	t0, playerState, t1
@@ -162,7 +179,7 @@ levelLoader:
 	li	t0, 10
 	sw	t0, playerEnergy, t1
 	# reset timer
-	li	t0, 1500
+	li	t0, 120
 	sw	t0, levelTimer, t1
 	
 	# reset enemy states
@@ -316,6 +333,39 @@ gameLoop:
 	# this can generalize many things which would otherwise become huge amounts of code
 	# s11 will be used as a ticker as it will be updated frequently
 	
+	# level pauser
+	lw	t0, levelPaused
+	beq	t0, zero, outPauseLevel
+pauseLevel:
+	li	a0, 0
+	li	a1, 0
+	la	a2, pause_overlay
+	li	a3, 0
+	jal	displayPrint
+	
+	jal	frameSwitch
+	
+pauseInput:
+	# this function gets input from the keyboard numbers and performs the relevant action.
+	lw	t0, keyboardAddress
+	lw	t1, 0(t0)
+	andi	t1, t1, 1
+	# check first bit at keyboard address to see if input has been pressed
+	beq	t1, zero, pauseInput
+	lb	t1, 4(t0)
+	li	t2, 0x031
+	beq	t1, t2, outPauseLevel
+	
+	li	t2, 0x032
+	beq	t1, t2, restarter
+	
+	li	t2, 0x33
+	beq	t1, t2, mainMenuRender
+	
+	j	levelInput
+outPauseLevel:
+	sw	zero, levelPaused, t0
+
 	li	t0, 200
 	bge	s11, t0, resetTicker
 	# reset ticker if it reaches 200 (every ~10 seconds)
@@ -398,6 +448,8 @@ continueInput:
 	beq	t1, t2, moveRt
 	li	t2, 0x20
 	beq	t1, t2, doSpecial
+	li	t2, 0x70
+	beq	t1, t2, flagPause
 	# if the input was not in the selector, no action is performed
 	li	t2, 0x51
 	beq	t1, t2, mainMenuRender
@@ -408,6 +460,11 @@ continueInput:
 	# t3 will store the number that will be used to create the pointer
 	# that points to the cell towards which the character just tried to move
 	# they also update the player's state accordingly
+flagPause:
+	li	t0, 1
+	sw	t0, levelPaused, t1
+	j	outInput
+	
 moveUp:
 	li	t3, -20
 	sw	t3, lookAheadPointer, t4
@@ -578,7 +635,7 @@ outInput:
 	ble	s0, zero, collectibleUpdate
 	j	backgroundRender
 collectibleUpdate:
-	j	gameOver
+	j	victoryScreen
 
 backgroundRender:
 	mv	a0, zero
@@ -608,7 +665,7 @@ menuRender:
 	lw	t0, currentCollectible
 	li	a0, 24
 	li	a1, 206
-	li	t1, 128
+	li	t1, 256
 	mul	a3, t0, t1
 	jal	displayPrint
 	
@@ -779,7 +836,7 @@ renderCollectible:
 	sb	t2, 0(s0)
 	la	a2, collectibles
 	lw	t2, currentCollectible
-	li	t1, 128
+	li	t1, 256
 	mul	a3, t1, t2
 	jal	displayPrint
 	j	continueRW
@@ -788,6 +845,9 @@ renderBreakableC:
 	li	t2, 4
 	sb	t2, 0(s0)
 	la	a2, breakable_c
+	lw	t2, currentCollectible
+	li	t1, 256
+	mul	a3, t1, t2
 	jal	displayPrint
 	j	continueRW
 	
@@ -839,8 +899,6 @@ renderBreaking1:
 	jal	displayPrint
 	j	continueRW
 
-
-	
 continueRW:
 	lw	t0, tempwidth
 	lw	t1, tempheight
@@ -868,7 +926,42 @@ mapRenderEnd:
 continueLoop: j gameLoop
 
 gameOver:
+	mv	a0, zero
+	mv	a1, zero
+	la	a2, gameover
+	mv	a3, zero
+	jal	displayPrint
+	jal	frameSwitch
+	
+overInput:
+	# wait for input to restart.
+	lw	t0, keyboardAddress
+	lw	t1, 0(t0)
+	andi	t1, t1, 1
+	beq	t1, zero, overInput
+	lb	t1, 4(t0)
+	li	t2, 0x072
+	beq	t1, t2, restarter
+	j	overInput
 
+victoryScreen:
+	mv	a0, zero
+	mv	a1, zero
+	la	a2, victory_screen
+	mv	a3, zero
+	jal	displayPrint
+	jal	frameSwitch
+
+	li	a0, 2500
+	li	a7, 32
+	ecall
+	
+	lw	t0, levelNumber
+	addi	t0, t0, 1
+	sw	t0, levelNumber, t1
+	
+	j	restarter
+	
 exitProgram:
 	li	a7, 10
 	ecall

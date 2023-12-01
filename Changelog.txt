@@ -50,7 +50,7 @@ v9 - 30/11/2023
 - minor maprender code changes for futureproofing
 - introduced breaking and building animations for blocks (dependant on playerEnergy)
 
-0.1a - 30/11/2023
+0.1.0a - 30/11/2023
 
 - "Alpha" phase - most features already introduced and only need polishing
 - will be out of alpha once enemies are ready
@@ -63,10 +63,20 @@ Changes since v9:
 - side menu now renders timer and score, as well as current level
 - introduced the timer mechanic, that causes a gameover once it reaches zero.
 
-0.2a - 30/11/2023 
+0.2.0a - 30/11/2023
+
 - mostly art changes 
 - level 3 (final boss) artwork, background and matrix 
 - updated main menu screen artwork
 - added gameover screen and pause menu artwork
-- introduced that multiple collectible per-level matrix thing
+- multiple collectible per-level matrices created in preparation for collectibleUpdate changes
 - added the frozen version of every item and also collectible no. 4 - spicy pepper
+
+0.2.1a - 01/12/2023 
+
+- multiple fixes and implementations of 0.2 art
+- implemented basic main menu (still has old functionality - press number for level)
+- implemented pause menu (number select screen, functional)
+- implemented restarter function that doubles as a level passer
+- collecting all collectibles now triggers the placeholder victory screen and sends you to the next level
+- victory screen lasts 2.5s

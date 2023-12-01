@@ -25,7 +25,7 @@ l2enemyTypes:
 l2playerPosition:
 	# x, y
 .word	
-	12, 7
+	12, 8
 l2collectibleCount:
 .word	16
 l2collectibleUpdates:
