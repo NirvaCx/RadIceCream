@@ -63,7 +63,7 @@ Changes since v9:
 - side menu now renders timer and score, as well as current level
 - introduced the timer mechanic, that causes a gameover once it reaches zero.
 
-0.2.0a - 30/11/2023
+0.2.0a - 30/11/2023 (warning: glitchy)
 
 - mostly art changes 
 - level 3 (final boss) artwork, background and matrix 
