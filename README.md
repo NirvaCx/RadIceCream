@@ -4,7 +4,7 @@ Created by Nirva Neves, Rodrigo Rafik and Mariana Simion<br>
 Inspired by BadIceCream by Nitrome<br>
 
 ## How to run
-Open terminal in game directory and type in the following:
+Open terminal from the game directory and type in the following:
 ```
 ./fpgrars-x86_64-pc-windows-msvc--unb.exe main.s
 ```
