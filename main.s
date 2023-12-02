@@ -512,17 +512,17 @@ timerDecrement:
 outTimerDecrement:
 	
 	lw	t0, levelTimer
-	li	t1, 120
-	beq	t0, t1, lowerCollectibleValue70
 	li	t1, 60
-	beq	t0, t1, lowerCollectibleValue40
+	remu	t0, t0, t1
+	beq	t0, zero, lowerCollectibleValue
 	j	noLower
-lowerCollectibleValue70:
-	li	s0, 70
-	sw	s0, collectibleValue, s1
-	j	noLower
-lowerCollectibleValue40:
-	li	s0, 40
+lowerCollectibleValue:
+	li	t1, 20
+	remu	t1, s11, t1
+	# this check must be made, otherwise it will subtract from collectibleValue 20 times. That isn't exactly a good thing.
+	bne	t1, zero, noLower
+	lw	s0, collectibleValue
+	addi	s0, s0, -20
 	sw	s0, collectibleValue, s1
 	j	noLower
 noLower:
@@ -717,8 +717,8 @@ continueMovement0:
 	bne	t1, t2, noPoint
 	lw	s0, points
 	lw	s2, collectibleValue
-	add	s0, s0, s2
-	sw	s0, points, s1
+	add	s2, s0, s2
+	sw	s2, points, s1
 	lw	s0, collectibleCount
 	addi	s0, s0, -1
 	sw	s0, collectibleCount, s1
