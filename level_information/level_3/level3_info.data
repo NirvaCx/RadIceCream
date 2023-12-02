@@ -1,0 +1,36 @@
+level3_info:
+l3enemyAmount:
+.word	8
+l3enemyPositions:
+	# x, y, ID
+.byte	
+	6, 2, 0,
+	17, 2, 1,
+	5, 4, 2,
+	18, 6, 3,
+	5, 8, 4,
+	18, 10, 5,
+	6, 13, 6,
+	17, 13, 7
+l3enemyTypes:
+.byte	
+	1,
+	1,
+	0,
+	1,
+	1,
+	1,
+	0,
+	0
+l3playerPosition:
+	# x, y
+.word	
+	13, 9
+l3collectibleCount:
+.word	12
+l3collectibleUpdates:
+.word	2
+l3collectibleTypes:
+.word	0, 1, 3
+l3timer:
+.word	300

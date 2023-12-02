@@ -1,18 +1,44 @@
 .data
 
+###############
+### globals ###
+###############
+
+# map width and height are fixed for every level
+mapwidth:
+.word	20
+mapheight:
+.word	15
+
+# how many levels are unlocked
+unlockedLevels:
+.word	1
+
+#####################
+### external data ###
+#####################
+
 .include "level_information/menu_screens/title_screen.data"
 .include "level_information/menu_screens/pause_overlay.data"
+.include "level_information/menu_screens/death_overlay.data"
 .include "level_information/menu_screens/gameover.data"
-.include "level_information/menu_screens/victory_screen.data"
+.include "level_information/menu_screens/victoryscreen.data"
 .include "sprites/numbers.data"
 
 .include "level_information/level_1/level1.data"
 .include "level_information/level_1/level1_bg.data"
 .include "level_information/level_1/level1_info.data"
+.include "level_information/level_1/level1_colupdates.data"
 
 .include "level_information/level_2/level2.data"
 .include "level_information/level_2/level2_bg.data"
 .include "level_information/level_2/level2_info.data"
+.include "level_information/level_2/level2_colupdates.data"
+
+.include "level_information/level_3/level3.data"
+.include "level_information/level_3/level3_bg.data"
+.include "level_information/level_3/level3_info.data"
+.include "level_information/level_3/level3_colupdates.data"
 
 .include "sprites/empty.data"
 .include "sprites/breakable.data"
@@ -22,6 +48,10 @@
 .include "sprites/char.data"
 .include "sprites/building0.data"
 .include "sprites/breaking0.data"
+
+#########################
+### ingame variables  ###
+#########################
 
 # levelLoader data
 currentLevel:
@@ -50,64 +80,89 @@ collectibleCount:
 .word	0
 collectibleUpdates:
 .word	0
+updateCounter:
+.word	0
 collectibleTypes:
 .word	0, 0, 0
+collectibleMatrices:
+.space	900
 currentCollectible:
 .word	0
 levelNumber:
 .word	0
 
-mapwidth:
-.word	20
-mapheight:
-.word	15
-# map width and height are fixed for every level
-tempwidth:
-.word	0x0
-tempheight:
-.word	0x0
-# matrix variables
+########################
+### player variables ###
+########################
 
+# states up, down, left and right are 0, 1, 2 and 3 respectively
 playerState:
 .word	1
-# states up, down, left and right are 0, 1, 2 and 3 respectively
+
+# boolean value - is the player pressing space?
 playerBreaking:
 .word	0
-# boolean value - is the player pressing space?
+
+# position
 playerPosX:
 .word	0
 playerPosY:
 .word	0
-points:
-.word	0
+
+# movement limiters
 playerEnergy:
 .word	0
 maxPlayerEnergy:
 .word	8
-# player variables
 
+collectibleValue:
+.word	0
+points:
+.word	0
+
+######################
+### MMIO variables ###
+######################
+
+# frameswitch variables
 currentframeaddress:
 .word	0xff100000
 displayedframeaddress:
 .word	0xff200604
-# frameswitch variables
 
+# input variables
 currentInput:
 .word	0x0
 keyboardAddress:
 .word	0xff200000
-# input variables
 
-# other variables
+#######################
+### Other variables ###
+#######################
 
+# used by doSpecial
 lookAheadPointer:
 .word	20
-# used by doSpecial
+
+# time variables
 levelTimer:
 .word	0
 levelPaused:
 .word	0
-#self explanatory
+
+# game flags
+victoryFlag:
+.word 0
+
+# mapRender variables
+tempwidth:
+.word	0x0
+tempheight:
+.word	0x0
+
+######################################
+######### End of data segment ########
+######################################
 
 .text
 
@@ -128,42 +183,83 @@ levelInput:
 	# check first bit at keyboard address to see if input has been pressed
 	beq	t1, zero, levelInput
 	lb	t1, 4(t0)
+	
+	# pressing 0 is a cheat to unlock all levels
+	li	t2, 0x30
+	beq	t1, t2, unlockLevels
+	
 	li	t2, 0x031
 	beq	t1, t2, load1
 	li	t2, 0x032
 	beq	t1, t2, load2
+	li	t2, 0x033
+	beq	t1, t2, load3
 	j	levelInput
-	
+
+unlockLevels:
+	li	t0, 9
+	sw	t0, unlockedLevels, t1
+	j	levelInput
+
 load1:
 	li	t0, 1
 	sw	t0, levelNumber, t1
 	la	a0, level1
 	la	a1, level1_bg
 	la	a2, level1_info
+	la	a3, level1_colupdates
 	j	levelLoader
 
 load2:
+	lw	t0, unlockedLevels
+	li	t1, 2
+	blt	t0, t1, levelInput
 	li	t0, 2
 	sw	t0, levelNumber, t1
 	la	a0, level2
 	la	a1, level2_bg
 	la	a2, level2_info
+	la	a3, level2_colupdates
+	j	levelLoader
+
+load3:
+	lw	t0, unlockedLevels
+	li	t1, 3
+	blt	t0, t1, levelInput
+	li	t0, 3
+	sw	t0, levelNumber, t1
+	la	a0, level3
+	la	a1, level3_bg
+	la	a2, level3_info
+	la	a3, level3_colupdates
 	j	levelLoader
 	
-restarter:
+dynamicLoader:
 	lw	t0, levelNumber
 	li	t1, 1
 	beq	t0, t1, load1
 	li	t1, 2
 	beq	t0, t1, load2
+	li	t1, 3
+	beq	t0, t1, load3
 	j	mainMenuRender
 
 levelLoader:
 	# a0 = level matrix
 	# a1 = level background image
 	# a2 = level information file
-	# a3 = level collectible update matrix (TBA)
+	# a3 = level collectible update matrix
 	
+	
+	# reset collectible values
+	li	t0, 100
+	sw	t0, collectibleValue, t1
+	# reset victory flag
+	li	t0, 0
+	sw	t0, victoryFlag, t1
+	# reset collectible update counter
+	li	t0, 0
+	sw	t0, updateCounter, t1
 	# reset pause flag
 	li	t0, 0
 	sw	t0, levelPaused, t1
@@ -178,9 +274,6 @@ levelLoader:
 	# reset player energy
 	li	t0, 10
 	sw	t0, playerEnergy, t1
-	# reset timer
-	li	t0, 120
-	sw	t0, levelTimer, t1
 	
 	# reset enemy states
 	la	s0, enemyStates
@@ -305,17 +398,20 @@ loadEnemyPosEnd:
 	lw	s1, 0(a2)
 	sw	s1, 0(s0)
 	
-	# init collectible updates
 	addi	a2, a2, 4
+	
+	# init collectible Update amount
 	la	s0, collectibleUpdates
 	lw	s1, 0(a2)
 	sw	s1, 0(s0)
 	
 	addi	a2, a2, 4
 	la	s0, collectibleTypes
+	li	s1, 3
 	li	t1, 0
+	
 initCollectibleTypes:
-	bgt	t1, s1, outICT
+	beq	t1, s1, outICT
 	lw	s2, 0(a2)
 	sw	s2, 0(s0)
 	addi	a2, a2, 4
@@ -323,6 +419,31 @@ initCollectibleTypes:
 	addi	t1, t1, 1
 	j	initCollectibleTypes
 outICT:
+	# load timer
+	lw	s2, 0(a2)
+	sw	s2, levelTimer, t0
+	
+	# init collectible matrices
+	la	s0, collectibleMatrices
+	lw	s1, collectibleUpdates
+	li	t0, 0
+initCollectibleMatrices:
+	bge	t0, s1, outICM
+	li	t1, 0
+	li	t2, 300
+ICMLoop:
+	bge	t1, t2, outICMLoop
+	lb	t3, 0(a3)
+	sb	t3, 0(s0)
+	addi	t1, t1, 1
+	addi	a3, a3, 1
+	addi	s0, s0, 1
+	j	ICMLoop
+outICMLoop:
+	addi	t0, t0, 1
+	j	initCollectibleMatrices
+outICM:
+
 	# init currentCollectible
 	la	s0, collectibleTypes
 	lw	s1, 0(s0)
@@ -357,7 +478,7 @@ pauseInput:
 	beq	t1, t2, outPauseLevel
 	
 	li	t2, 0x032
-	beq	t1, t2, restarter
+	beq	t1, t2, dynamicLoader
 	
 	li	t2, 0x33
 	beq	t1, t2, mainMenuRender
@@ -386,6 +507,22 @@ timerDecrement:
 	bne	t0, zero, outTimerDecrement
 	j	gameOver
 outTimerDecrement:
+	
+	lw	t0, levelTimer
+	li	t1, 120
+	beq	t0, t1, lowerCollectibleValue70
+	li	t1, 60
+	beq	t0, t1, lowerCollectibleValue40
+	j	noLower
+lowerCollectibleValue70:
+	li	s0, 70
+	sw	s0, collectibleValue, s1
+	j	noLower
+lowerCollectibleValue40:
+	li	s0, 40
+	sw	s0, collectibleValue, s1
+	j	noLower
+noLower:
 
 	# player stamina system core
 	# used in move and special functions
@@ -451,9 +588,6 @@ continueInput:
 	li	t2, 0x70
 	beq	t1, t2, flagPause
 	# if the input was not in the selector, no action is performed
-	li	t2, 0x51
-	beq	t1, t2, mainMenuRender
-	# cheat key for going back to level select
 	j	outInput
 	
 	# the four labels below all do the same thing for different movements
@@ -575,7 +709,8 @@ continueMovement0:
 	li	t2, 3
 	bne	t1, t2, noPoint
 	lw	s0, points
-	addi	s0, s0, 100
+	lw	s2, collectibleValue
+	add	s0, s0, s2
 	sw	s0, points, s1
 	lw	s0, collectibleCount
 	addi	s0, s0, -1
@@ -630,12 +765,10 @@ moveRt2:
 	j	outInput
 outInput:
 	
-	# collectible updating function (for when the player collects every objective on screen)
-	lw	s0, collectibleCount
-	ble	s0, zero, collectibleUpdate
-	j	backgroundRender
-collectibleUpdate:
-	j	victoryScreen
+	# call collectible updating function (for when the player collects every objective on screen)
+	lw	t0, collectibleCount
+	bne	t0, zero, backgroundRender
+	jal	updateCollectibles
 
 backgroundRender:
 	mv	a0, zero
@@ -748,7 +881,6 @@ menuRender:
 	li	t1, 128
 	mul	a3, t0, t1
 	jal	displayPrint
-	
 	
 mapRender:
 	# initialize level information
@@ -916,6 +1048,10 @@ mapRenderEnd:
 	
 	jal	frameSwitch
 	
+	# check for victory
+	lw	t0, victoryFlag
+	bne	t0, zero, victoryScreen
+	
 	# define tickrate
 	addi	s11, s11, 1
 	
@@ -926,6 +1062,18 @@ mapRenderEnd:
 continueLoop: j gameLoop
 
 gameOver:
+	
+	mv	a0, zero
+	mv	a1, zero
+	la	a2, death_overlay
+	mv	a3, zero
+	jal	displayPrint
+	jal	frameSwitch
+	
+	li	a0, 1000
+	li	a7, 32
+	ecall
+	
 	mv	a0, zero
 	mv	a1, zero
 	la	a2, gameover
@@ -941,13 +1089,127 @@ overInput:
 	beq	t1, zero, overInput
 	lb	t1, 4(t0)
 	li	t2, 0x072
-	beq	t1, t2, restarter
+	beq	t1, t2, dynamicLoader
 	j	overInput
 
 victoryScreen:
+
+	# below are carbon copies of menuRender and renderBackground functions
+	# necessary because they're not callable
+	
 	mv	a0, zero
 	mv	a1, zero
-	la	a2, victory_screen
+	la	a2, levelBackground
+	jal	displayPrint
+	
+	# Menu positions for reference:
+	# Level Number: Y 70 X 29
+	# Timer Digits: Y 113, X 16, 24, 34, 42 respectively
+	# Score Digits: Y 153, X 17, 25, 33, 41 respectively 
+	# Current Item: Y 206, X 24
+	# I once again deeply apologize for how unelegant the following code is.
+	
+	# level number renderer
+	la	a2, numbers
+	lw	t0, levelNumber
+	li	a0, 29
+	li	a1, 70
+	li	t1, 128
+	mul	a3, t0, t1
+	jal	displayPrint
+	
+	# current collectible renderer
+	la	a2, collectibles
+	lw	t0, currentCollectible
+	li	a0, 24
+	li	a1, 206
+	li	t1, 256
+	mul	a3, t0, t1
+	jal	displayPrint
+	
+	# timer renderer
+	la	a2, numbers
+	lw	s0, levelTimer
+	li	a0, 16
+	li	a1, 113
+	li	t1, 600
+	div	t0, s0, t1
+	remu	s0, s0, t1
+	li	t1, 128
+	mul	a3, t0, t1
+	jal	displayPrint
+	
+	la	a2, numbers
+	li	a0, 24
+	li	a1, 113
+	li	t1, 60
+	div	t0, s0, t1
+	remu	s0, s0, t1
+	li	t1, 128
+	mul	a3, t0, t1
+	jal	displayPrint
+	
+	la	a2, numbers
+	li	a0, 34
+	li	a1, 113
+	li	t1, 10
+	div	t0, s0, t1
+	remu	s0, s0, t1
+	li	t1, 128
+	mul	a3, t0, t1
+	jal	displayPrint
+	
+	la	a2, numbers
+	li	a0, 42
+	li	a1, 113
+	mv	t0, s0
+	li	t1, 128
+	mul	a3, t0, t1
+	jal	displayPrint
+	
+	# score renderer
+	lw	s0, points
+	la	a2, numbers
+	li	a0, 17
+	li	a1, 153
+	li	t1, 1000
+	div	t0, s0, t1
+	remu	s0, s0, t1
+	li	t1, 128
+	mul	a3, t0, t1
+	jal	displayPrint
+	
+	la	a2, numbers
+	li	a0, 25
+	li	a1, 153
+	li	t1, 100
+	div	t0, s0, t1
+	remu	s0, s0, t1
+	li	t1, 128
+	mul	a3, t0, t1
+	jal	displayPrint
+	
+	la	a2, numbers
+	li	a0, 33
+	li	a1, 153
+	li	t1, 10
+	div	t0, s0, t1
+	remu	s0, s0, t1
+	li	t1, 128
+	mul	a3, t0, t1
+	jal	displayPrint
+	
+	la	a2, numbers
+	li	a0, 41
+	li	a1, 153
+	mv	t0, s0
+	li	t1, 128
+	mul	a3, t0, t1
+	jal	displayPrint
+	
+	li	a0, 64
+	mv	a1, zero
+	la	a2, victoryscreen
 	mv	a3, zero
 	jal	displayPrint
 	jal	frameSwitch
@@ -958,13 +1220,13 @@ victoryScreen:
 	
 	lw	t0, levelNumber
 	addi	t0, t0, 1
+	lw	t1, unlockedLevels
+	bgt	t1, t0, noUnlocks
+	sw	t0, unlockedLevels, t1
+noUnlocks:
 	sw	t0, levelNumber, t1
 	
-	j	restarter
-	
-exitProgram:
-	li	a7, 10
-	ecall
+	j	dynamicLoader
 
 frameSwitch:
 	# frameswitch algorithm
@@ -1054,6 +1316,98 @@ xEnd:
 	# increment currentY
 	j	yLoop	
 displayPrintEnd:
-	mv	a3, zero
 	# reset a3 for safety purposes (it is only used by display print and is never reset anywhere)
+	mv	a3, zero
 	ret
+
+updateCollectibles:
+	# function is only run when all collectibles have been attained
+	# function should only run while there are still updates
+	lw	t0, collectibleUpdates
+	bgt	t0, zero, proceedColupdates
+	# if there are no more collectibles on the screen and no updates to be made, player wins
+	beq	t0, zero, flagVictory
+	j	finishColupdates
+flagVictory:
+	li	t0, 1
+	sw	t0, victoryFlag, t1
+	j	finishColupdates
+proceedColupdates:
+	# get information from memory
+	la	s0, collectibleMatrices
+	lw	s1, updateCounter
+	lw	s2, collectibleCount
+	la	s3, currentLevel
+	addi	s3, s3, 8
+	
+	# set s0 to properly point at the update matrix
+	li	t0, 300
+	mul	t1, s1, t0
+	add	s0, s0, t1
+	
+	li	t0, 300
+	li	t1, 0
+	
+checkColupdates:
+	bge	t1, t0, finishColchecks
+	
+	lb	s4, 0(s0)
+	beq	s4, zero, continueColchecks
+	
+	lb	s4, 0(s3)
+	
+	beq	s4, zero, updateEmpty
+	li	t2, 2
+	beq	s4, t2, updateBreakable
+	j	continueColchecks
+
+updateEmpty:
+	li	t2, 3
+	sb	t2, 0(s3)
+	addi	s2, s2, 1
+	j	continueColchecks
+
+updateBreakable:
+	li	t2, 4
+	sb	t2, 0(s3)
+	addi	s2, s2, 1
+	j	continueColchecks
+	
+continueColchecks:
+	addi	s0, s0, 1
+	addi	s3, s3, 1
+	addi	t1, t1, 1
+	j	checkColupdates
+	
+finishColchecks:
+	# save new collectible amount
+	la	s0, collectibleCount
+	sw	s2, 0(s0)
+	
+	# increment update counter
+	lw	s0, updateCounter
+	addi	s0, s0, 1
+	sw	s0, updateCounter, s1
+	
+	# decrement update queue
+	lw	s0, collectibleUpdates
+	addi	s0, s0, -1
+	sw	s0, collectibleUpdates, s1
+	
+	# update current collectible
+	lw	s0, updateCounter
+	li	t0, 4
+	mul	s0, s0, t0
+	la	s1, collectibleTypes
+	la	s2, currentCollectible
+	add	s1, s1, s0
+	lw	t0, 0(s1)
+	sw	t0, 0(s2)
+
+finishColupdates:
+	ret
+	
+exitProgram:
+	li	a7, 10
+	ecall
+# Nirva was here >:3

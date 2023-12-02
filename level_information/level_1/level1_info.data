@@ -31,4 +31,6 @@ l1collectibleCount:
 l1collectibleUpdates:
 .word	1
 l1collectibleTypes:
-.word	0, 1, 0
+.word	0, 2, 0
+l1timer:
+.word	180

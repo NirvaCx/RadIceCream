@@ -80,3 +80,18 @@ Changes since v9:
 - implemented restarter function that doubles as a level passer
 - collecting all collectibles now triggers the placeholder victory screen and sends you to the next level
 - victory screen lasts 2.5s
+
+0.3.0a - 02/12/2023
+
+- completely reworked collectible system
+- introduced level 3
+- introduced collectible updates for all levels
+- slight recommenting
+- reworked victory system - now requires you to pass through all collectible types in that level
+- new level unlocking system; only level 1 starts unlocked (press 0 to unlock all levels)
+- levels now have their own timers (3 minutes for levels 1 and 2 and 5 minutes for level 3)
+- taking too long now reduces the amount of points you get (30 less points per collectible at 2 minutes remaining and another 30 point deduction at 1 minute remaining)
+- enormous changes to levelLoader
+- slight victory screen rework, still WIP (now doesn't affect side menu so one can see their score and time)
+- victory is now defined by a flag that gets checked at the end of every tick rather than a jump
+- many, many fixes.
