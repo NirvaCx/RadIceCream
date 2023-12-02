@@ -486,7 +486,7 @@ pauseInput:
 	li	t2, 0x33
 	beq	t1, t2, mainMenuRender
 	
-	j	levelInput
+	j	pauseInput
 outPauseLevel:
 	sw	zero, levelPaused, t0
 
@@ -996,8 +996,8 @@ renderEnemy:
 	li	s5, 8
 	li	s6, 0
 findEnemy:
-	# panic check - no matching enemy position was found
-	bge	s6, s5, renderBreakableC
+	# panic check - no matching enemy position was found, replace with empty cell
+	bge	s6, s5, renderEmpty
 	lb	s4, 0(s3)
 	beq	t0, s4, xMatch
 	addi	s3, s3, 3
@@ -1040,8 +1040,8 @@ enemyFound:
 	beq	s3, zero, renderDudu
 	li	t0, 1
 	beq	s3, t0, renderTonho
-	# if somehow an enemy doesn't match any known enemy type, render an empty cell (to be replaced with missing texture)
-	j	renderPlayer
+	# if somehow an enemy doesn't match any known enemy type, replace with an empty cell (to be replaced with missing texture)
+	j	renderEmpty
 	
 renderDudu:
 	la	a2, enemy_dudu
