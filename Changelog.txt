@@ -95,3 +95,9 @@ Changes since v9:
 - slight victory screen rework, still WIP (now doesn't affect side menu so one can see their score and time)
 - victory is now defined by a flag that gets checked at the end of every tick rather than a jump
 - many, many fixes.
+
+0.3.1a - 02/12/2023
+
+- introduced proper enemy rendering system (now renders according to type and state)
+- small fixes to level information files and level 3's hitboxes
+- the player must now face a direction before they may move in it. This significantly improves controlability

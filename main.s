@@ -45,6 +45,7 @@ unlockedLevels:
 .include "sprites/collectibles.data"
 .include "sprites/breakable_c.data"
 .include "sprites/enemy_dudu.data"
+.include "sprites/enemy_tonho.data"
 .include "sprites/char.data"
 .include "sprites/building0.data"
 .include "sprites/breaking0.data"
@@ -277,16 +278,18 @@ levelLoader:
 	
 	# reset enemy states
 	la	s0, enemyStates
-	li	t0, 8
+	li	t0, 4
 	li	t1, 0
-	li	t2, 1
-enemyReset:
-	bge	t1, t0, endEnemyReset
-	sb	t2, 0(s0)
+	# the reason for this number is that it alternates between bytes 0 and 1
+	# we want all enemies to start facing down and not performing specials
+	li	t2, 0x00010001
+enemyStateReset:
+	bge	t1, t0, endEnemyStateReset
+	sw	t2, 0(s0)
 	addi	t1, t1, 1
-	addi	s0, s0, 1
-	j	enemyReset
-endEnemyReset:
+	addi	s0, s0, 4
+	j	enemyStateReset
+endEnemyStateReset:
 	
 	# copy from level data to currentLevel
 	la	s0, currentLevel
@@ -603,30 +606,34 @@ moveUp:
 	li	t3, -20
 	sw	t3, lookAheadPointer, t4
 	lw	s0, playerState
-	li	s0, 0
-	sw	s0, playerState, s1
-	j	movePlayer
+	li	s1, 0
+	sw	s1, playerState, s2
+	beq	s0, s1, movePlayer
+	j	outInput
 moveDn:
 	li	t3, 20
 	sw	t3, lookAheadPointer, t4
 	lw	s0, playerState
-	li	s0, 1
-	sw	s0, playerState, s1
-	j	movePlayer
+	li	s1, 1
+	sw	s1, playerState, s2
+	beq	s0, s1, movePlayer
+	j	outInput
 moveLt:
 	li	t3, -1
 	sw	t3, lookAheadPointer, t4
 	lw	s0, playerState
-	li	s0, 2
-	sw	s0, playerState, s1
-	j	movePlayer
+	li	s1, 2
+	sw	s1, playerState, s2
+	beq	s0, s1, movePlayer
+	j	outInput
 moveRt:
 	li	t3, 1
 	sw	t3, lookAheadPointer, t4
 	lw	s0, playerState
-	li	s0, 3
-	sw	s0, playerState, s1
-	j	movePlayer
+	li	s1, 3
+	sw	s1, playerState, s2
+	beq	s0, s1, movePlayer
+	j	outInput
 	
 doSpecial:
 	# only allow special if energy is full
@@ -985,7 +992,64 @@ renderBreakableC:
 	
 renderEnemy:
 	# needs to use t0 and t1 to find out ID of the enemy in this position and render according to state and type
+	la	s3, enemyPositions
+	li	s5, 8
+	li	s6, 0
+findEnemy:
+	# panic check - no matching enemy position was found
+	bge	s6, s5, renderBreakableC
+	lb	s4, 0(s3)
+	beq	t0, s4, xMatch
+	addi	s3, s3, 3
+	addi	s6, s6, 1
+	j	findEnemy
+xMatch:
+	# if x and y matches, we found the right enemy ID
+	lb	s4, 1(s3)
+	beq	t1, s4, enemyFound
+	addi	s3, s3, 3
+	addi	s6, s6, 1
+	j	findEnemy
+enemyFound:
+	# gather ID (now held in s4)
+	lb	s4, 2(s3)
+	
+	# gather direction
+	la	s3, enemyStates
+	li	t0, 2
+	mul	s5, s4, t0
+	add	s3, s5, s3
+	lb	s5, 0(s3)
+	
+	# gather special state
+	li	t0, 4
+	lb	s6, 1(s3)
+	mul	s6, s6, t0
+	
+	# load a3 state argument
+	li	t0, 256
+	add	a3, s5, s6
+	mul	a3, t0, a3
+	
+	# gather type
+	la	s3, enemyTypes
+	add	s3, s4, s3
+	lb	s3, 0(s3)
+	
+	# enemy render selector
+	beq	s3, zero, renderDudu
+	li	t0, 1
+	beq	s3, t0, renderTonho
+	# if somehow an enemy doesn't match any known enemy type, render an empty cell (to be replaced with missing texture)
+	j	renderPlayer
+	
+renderDudu:
 	la	a2, enemy_dudu
+	jal	displayPrint
+	j	continueRW
+
+renderTonho:
+	la	a2, enemy_tonho
 	jal	displayPrint
 	j	continueRW
 
