@@ -34,3 +34,5 @@ l1collectibleTypes:
 .word	0, 2, 0
 l1timer:
 .word	180
+l1coldec:
+.word	20

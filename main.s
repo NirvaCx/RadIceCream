@@ -1,3 +1,23 @@
+#########################################################
+#						        #
+# Universidade de Brasilia			        #
+# Instituto de Ciencias Exatas			        #
+# Departamento de Ciencia da Computacao		       	#
+# Introducao aos Sistemas Computacionais - 2023.2	#
+# Professor Marcus Vinicius Lamar			#
+# Alunos Nirva Neves, Rodrigo Rafik e Mariana Simion    #
+# Projeto Final					   	#
+# Nome do jogo: RadIceCream				#
+#							#
+#########################################################
+#
+# Notes:
+# 1 - Registers are used rather liberally, with only argument registers really being used for their intended purposes.
+# Since memory is used so extensively, we delegated the function of saved registers mostly to memory. In other words,
+# temporary and saved registers are pretty much used interchangeably.
+#
+# 2 - Register s11 is exclusively used as a tick counter. 
+
 .data
 
 ###############
@@ -19,6 +39,7 @@ unlockedLevels:
 #####################
 
 .include "level_information/menu_screens/title_screen.data"
+.include "level_information/menu_screens/level_select.data"
 .include "level_information/menu_screens/pause_overlay.data"
 .include "level_information/menu_screens/death_overlay.data"
 .include "level_information/menu_screens/gameover.data"
@@ -83,10 +104,15 @@ collectibleUpdates:
 .word	0
 updateCounter:
 .word	0
+
+# Enough space for three updates, could be expanded but I can't be bothered since the max is 3 anyway
+# Like why would anyone in their right mind put four collectibles in a level
 collectibleTypes:
 .word	0, 0, 0
 collectibleMatrices:
 .space	900
+collectibleDecrement:
+.word	0
 currentCollectible:
 .word	0
 levelNumber:
@@ -116,6 +142,7 @@ playerEnergy:
 maxPlayerEnergy:
 .word	8
 
+# How much each collectible is worth
 collectibleValue:
 .word	0
 points:
@@ -173,11 +200,38 @@ mainMenuRender:
 	mv	a1, zero
 	la	a2, title_screen
 	jal	displayPrint
-	
 	jal	frameSwitch
 
+mainMenuSelect:
+	
+	# get input from the keyboard for menu options
+	lw	t0, keyboardAddress
+	lw	t1, 0(t0)
+	andi	t1, t1, 1
+	# check first bit at keyboard address to see if input has been pressed
+	beq	t1, zero, mainMenuSelect
+	lb	t1, 4(t0)
+	
+	li	t2, 0x031
+	beq	t1, t2, levelSelect
+	li	t2, 0x032
+	# this slight madness below has to be done because exitProgram is out of the branch's range (+- 512 words)
+	bne	t1, t2, continueMMSelect
+	j	exitProgram
+continueMMSelect:
+	
+	j	mainMenuSelect
+	
+levelSelect:
+	# render level select screen
+	mv	a0, zero
+	mv	a1, zero
+	la	a2, level_select
+	jal	displayPrint
+	jal	frameSwitch
+	
 levelInput:
-	# this function gets input from the keyboard numbers and loads the corresponding level.
+	# get input from the keyboard numbers and loads the corresponding level.
 	lw	t0, keyboardAddress
 	lw	t1, 0(t0)
 	andi	t1, t1, 1
@@ -189,15 +243,21 @@ levelInput:
 	li	t2, 0x30
 	beq	t1, t2, unlockLevels
 	
+	# load level according to keyboard numbers
 	li	t2, 0x031
 	beq	t1, t2, load1
 	li	t2, 0x032
 	beq	t1, t2, load2
 	li	t2, 0x033
 	beq	t1, t2, load3
+	
+	# p returns to main menu
+	li	t2, 0x70
+	beq	t1, t2, mainMenuRender
 	j	levelInput
 
 unlockLevels:
+	# unlock levels and go back to level prompt
 	li	t0, 9
 	sw	t0, unlockedLevels, t1
 	j	levelInput
@@ -212,10 +272,12 @@ load1:
 	j	levelLoader
 
 load2:
+	# only loadable if unlocked
 	lw	t0, unlockedLevels
 	li	t1, 2
 	blt	t0, t1, levelInput
 	li	t0, 2
+	
 	sw	t0, levelNumber, t1
 	la	a0, level2
 	la	a1, level2_bg
@@ -224,10 +286,12 @@ load2:
 	j	levelLoader
 
 load3:
+	# equally
 	lw	t0, unlockedLevels
 	li	t1, 3
 	blt	t0, t1, levelInput
 	li	t0, 3
+	
 	sw	t0, levelNumber, t1
 	la	a0, level3
 	la	a1, level3_bg
@@ -236,6 +300,8 @@ load3:
 	j	levelLoader
 	
 dynamicLoader:
+	# loads a level based on the current levelNumber
+	# useful for restarting and loading the next level after victory
 	lw	t0, levelNumber
 	li	t1, 1
 	beq	t0, t1, load1
@@ -305,14 +371,19 @@ endEnemyStateReset:
 	# t3 = current y
 	addi	s0, s0, 8
 	addi	a0, a0, 8
+	# s0 is currentLevel saver pointer and a0 is level data loader pointer
 levelYloop:
+	# iterate through matrix lines
 	bge	t3, t1, levelYloopEnd
 	li	t2, 0
 levelXloop:
+	# iterate through matrix columns
 	bge	t2, t0, levelXloopEnd
+	# copy from level data pointer to currentLevel data pointer
 	lw	t4, 0(a0)
 	sw	t4, 0(s0)
-	# copy from level data pointer to currentLevel data pointer
+	
+	# increments
 	addi	a0, a0, 4
 	addi	s0, s0, 4
 	addi	t2, t2, 4
@@ -323,6 +394,7 @@ levelXloopEnd:
 levelYloopEnd:
 
 getBackground:
+
 	# copy background data to levelBackground
 	la	s0, levelBackground
 	lw	t0, 0(a1)
@@ -337,14 +409,17 @@ getBackground:
 	# t3 = current y
 	addi	s0, s0, 8
 	addi	a1, a1, 8
+	# very similar to the procedure above (It's almost the same code.)
 bgYloop:
 	bge	t3, t1, bgYloopEnd
 	li	t2, 0
 bgXloop:
 	bge	t2, t0, bgXloopEnd
+	# copy 4 pixels from background pointer to levelBackground pointer
 	lw	t4, 0(a1)
 	sw	t4, 0(s0)
-	# copy 4 pixels from background pointer to levelBackground pointer
+	
+	# increments
 	addi	a1, a1, 4
 	addi	s0, s0, 4
 	addi	t2, t2, 4
@@ -353,29 +428,34 @@ bgXloopEnd:
 	addi	t3, t3, 1
 	j	bgYloop
 bgYloopEnd:
-
+	
+	# now using argument a2 for accessing level information
 getInfo:
 	# collect enemy amount
 	lw	s0, 0(a2)
 	sw	s0, enemyAmount, t0
+	
+	# move a2 to enemy positions
 	addi	a2, a2, 4
-	# move to enemy positions
 	li	t0, 24
 	# enemy position is 6 words long (allows for 8 enemies total)
 	li	t1, 0
 	la	s0, enemyPositions
 	# counter
 	# collect enemy positions
+	# deja vu
 loadEnemyPos:
 	bge	t1, t0, loadEnemyPosEnd
 	lw	s1, 0(a2)
 	sw	s1, 0(s0)
+	
 	addi	a2, a2, 4
 	addi	s0, s0, 4
 	addi	t1, t1, 4
 	j	loadEnemyPos
 loadEnemyPosEnd:
-	# collect enemy types
+	
+	# collect enemy types (could've been iterative but why iterate through only two words?)
 	la	s0, enemyTypes
 	lw	s1, 0(a2)
 	sw	s1, 0(s0)
@@ -383,36 +463,40 @@ loadEnemyPosEnd:
 	addi	a2, a2, 4
 	lw	s1, 0(a2)
 	sw	s1, 0(s0)
+	
+	# move a2 to player positions
 	addi	a2, a2, 4
-	# collect player position
+	# collect player positions
 	la	s0, playerPosX
 	lw	s1, 0(a2)
 	sw	s1, 0(s0)
 	
 	addi	a2, a2, 4
-	
 	la	s0, playerPosY
 	lw	s1, 0(a2)
 	sw	s1, 0(s0)
 	
+	# move a2 to collectible amount
 	addi	a2, a2, 4
 	# init collectible amount
 	la	s0, collectibleCount
 	lw	s1, 0(a2)
 	sw	s1, 0(s0)
 	
+	# move a2 to collectible updates
 	addi	a2, a2, 4
-	
 	# init collectible Update amount
 	la	s0, collectibleUpdates
 	lw	s1, 0(a2)
 	sw	s1, 0(s0)
 	
+	# move a2 to collectible types
 	addi	a2, a2, 4
+	
+	# init collectible types (iterative because 2 words is too little and 3 is enough apparently)
 	la	s0, collectibleTypes
 	li	s1, 3
 	li	t1, 0
-	
 initCollectibleTypes:
 	beq	t1, s1, outICT
 	lw	s2, 0(a2)
@@ -422,17 +506,28 @@ initCollectibleTypes:
 	addi	t1, t1, 1
 	j	initCollectibleTypes
 outICT:
+
 	# load timer
 	lw	s2, 0(a2)
 	sw	s2, levelTimer, t0
+	
+	# move to cdpm
+	addi	a2, a2, 4
+	# load collectible decrement per minute
+	lw	s2, 0(a2)
+	sw	s2, collectibleDecrement, t0
+	
+	# now using a3 to collect the update matrices
 	
 	# init collectible matrices
 	la	s0, collectibleMatrices
 	lw	s1, collectibleUpdates
 	li	t0, 0
+	# these matrices are self-contained so there is no need to count x and y
 initCollectibleMatrices:
 	bge	t0, s1, outICM
 	li	t1, 0
+	# all matrices are 300 bytes long (20 * 15)
 	li	t2, 300
 ICMLoop:
 	bge	t1, t2, outICMLoop
@@ -453,53 +548,47 @@ outICM:
 	sw	s1, currentCollectible, s0
 	
 gameLoop:
-	# movement code can probably be reused for enemy movement by substituting "playerState" for "elementState"
-	# this can generalize many things which would otherwise become huge amounts of code
-	# s11 will be used as a ticker as it will be updated frequently
 	
 	# level pauser
 	lw	t0, levelPaused
 	beq	t0, zero, outPauseLevel
 pauseLevel:
+	# display pause screen
 	li	a0, 0
 	li	a1, 0
 	la	a2, pause_overlay
 	li	a3, 0
 	jal	displayPrint
-	
 	jal	frameSwitch
 	
 pauseInput:
-	# this function gets input from the keyboard numbers and performs the relevant action.
+	# get input from the keyboard numbers and perform the relevant action
 	lw	t0, keyboardAddress
 	lw	t1, 0(t0)
 	andi	t1, t1, 1
 	# check first bit at keyboard address to see if input has been pressed
+	# again, if no input it just keeps checking
 	beq	t1, zero, pauseInput
 	lb	t1, 4(t0)
+	# 1 for unpause
 	li	t2, 0x031
 	beq	t1, t2, outPauseLevel
-	
+	# 2 for restart (dynamicLoader loads current level)
 	li	t2, 0x032
 	beq	t1, t2, dynamicLoader
-	
+	# 3 for main menu
 	li	t2, 0x33
 	beq	t1, t2, mainMenuRender
-	
+	# other inputs are invalid
 	j	pauseInput
+	
 outPauseLevel:
+	# remove pause flag
 	sw	zero, levelPaused, t0
 
-	li	t0, 200
-	bge	s11, t0, resetTicker
-	# reset ticker if it reaches 200 (every ~10 seconds)
-	j	outResetTicker
-resetTicker:
-	li	s11, 0
-outResetTicker:
-
-	# decrement timer every second (very approximate)
+	# decrement timer every second (approximate)
 	li	t0, 20
+	# since s11 is only divisible by 20 once per second, the code runs as intended.
 	remu	t0, s11, t0
 	beq	t0, zero, timerDecrement
 	j	outTimerDecrement
@@ -507,24 +596,23 @@ timerDecrement:
 	lw	t0, levelTimer
 	addi	t0, t0, -1
 	sw	t0, levelTimer, t1
+	# game ends if player runs out of time
 	bne	t0, zero, outTimerDecrement
 	j	gameOver
 outTimerDecrement:
 	
-	lw	t0, levelTimer
-	li	t1, 60
-	remu	t0, t0, t1
-	beq	t0, zero, lowerCollectibleValue
+	# Collectibles will lose value every minute; value lost is specified on level information file
+	# 1200 ticks = one minute
+	li	t1, 1200
+	remu	t1, s11, t1
+	beq	s11, zero, noLower
+	beq	t1, zero, lowerCollectibleValue
 	j	noLower
 lowerCollectibleValue:
-	li	t1, 20
-	remu	t1, s11, t1
-	# this check must be made, otherwise it will subtract from collectibleValue 20 times. That isn't exactly a good thing.
-	bne	t1, zero, noLower
 	lw	s0, collectibleValue
-	addi	s0, s0, -20
+	lw	t1, collectibleDecrement
+	sub	s0, s0, t1
 	sw	s0, collectibleValue, s1
-	j	noLower
 noLower:
 
 	# player stamina system core
@@ -565,9 +653,11 @@ continueInput:
 	# a = 0x61
 	# d = 0x64
 	# space = 0x20
+	# p = 0x70
 	
 	# set matrix pointer t0 to player position
 	# t2 is used as a temporary for this process, getting mostly values from memory
+	# this must be done before keycheck to prevent a lot of code repetition
 	lw	t2, playerPosY
 	li	t0, 20
 	mul	t0, t0, t2
@@ -577,7 +667,7 @@ continueInput:
 	addi	t2, t2, 8
 	add	t0, t0, t2
 	
-	# movement selector based on received input
+	# action selector based on received input
 	li	t2, 0x077
 	beq	t1, t2, moveUp
 	li	t2, 0x073
@@ -603,11 +693,16 @@ flagPause:
 	j	outInput
 	
 moveUp:
+	# these are all similar
+	# t3 loads the matrix increment/decrement for the target cell
 	li	t3, -20
+	# this increment is important for the special move, so it's saved in memory
 	sw	t3, lookAheadPointer, t4
 	lw	s0, playerState
 	li	s1, 0
 	sw	s1, playerState, s2
+	# player will move in a direction they're already facing
+	# otherwise, they will only update the direction this tick
 	beq	s0, s1, movePlayer
 	j	outInput
 moveDn:
@@ -644,21 +739,24 @@ doSpecial:
 	li	s0, 0
 	sw	s0, playerEnergy, s1
 	
+	# set player secondary state for rendering the animation
 	lw	s0, playerBreaking
 	li	s0, 1
 	sw	s0, playerBreaking, s1
 	
-	lw	t3, lookAheadPointer
 	# t3 is the constant increment that will be used to "walk" to the next block
+	lw	t3, lookAheadPointer
 	
-	add	t4, t0, t3
-	li	t6, 0
 	# t6 is a flag for whether or not one of the functions has already run
 	# e.g. playerDestroy should NOT run if playerBuild did run
 	# t4 is target cell pointer; t1 is whatever is contained in that cell
+	add	t4, t0, t3
+	li	t6, 0
+	
 playerBuild:
 	lb	t1, 0(t4)
 	li	t5, 0
+	# build will run if t1 is an open cell (0 or 3)
 	beq	t1, t5, buildBreakable
 	li	t5, 3
 	beq	t1, t5, buildBreakable_c
@@ -671,6 +769,7 @@ buildBreakable:
 	li	t6, 1
 	j	playerBuild
 buildBreakable_c:
+	# has a collectible inside
 	li	t1, 11
 	sb	t1, 0(t4)
 	add	t4, t4, t3
@@ -680,6 +779,7 @@ buildBreakable_c:
 playerDestroy:
 	lb	t1, 0(t4)
 	li	t5, 2
+	# destroy will run if t1 is a breakable (2 or 4)
 	beq	t1, t5, destroyBreakable
 	li	t5, 4
 	beq	t1, t5, destroyBreakable_c
@@ -690,6 +790,7 @@ destroyBreakable:
 	add	t4, t4, t3
 	j	playerDestroy
 destroyBreakable_c:
+	# drops a collectible later
 	li	t1, 13
 	sb	t1, 0(t4)
 	add	t4, t4, t3
@@ -700,7 +801,6 @@ movePlayer:
 	lw	t4, maxPlayerEnergy
 	lw	s0, playerEnergy
 	blt	s0, t4, outInput
-	
 	# reset playerEnergy
 	li	s0, 0
 	sw	s0, playerEnergy, s1
@@ -709,12 +809,15 @@ movePlayer:
 	# t1 is whatever is contained in target cell
 	lb	t1, 0(t4)
 	li	t2, 5
+	# collision with ID 5 (enemy) results in a gameover
 	bne	t1, t2, continueMovement0
 	j	gameOver
 continueMovement0:
-	# collision with ID 5 (enemy) results in a gameover
+	# check for collision with collectible
 	li	t2, 3
 	bne	t1, t2, noPoint
+	# collision with a collectible will replace the collectible with empty space,
+	# add 100 points, remove 1 from the collectible counter and finish the movement algorithm
 	lw	s0, points
 	lw	s2, collectibleValue
 	add	s2, s0, s2
@@ -722,16 +825,19 @@ continueMovement0:
 	lw	s0, collectibleCount
 	addi	s0, s0, -1
 	sw	s0, collectibleCount, s1
+	
 	j	continueMovement1
-	# collision with a collectible will replace the collectible with empty space,
-	# add 100 points, remove 1 from the collectible counter and finish the movement algorithm
 noPoint:
-	bne	t1, zero, outInput
 	# since the only cells towards which you can move other than collectibles are empty cells,
-	# we can cancel the movement algorithm if the cell is not empty
+	# we can cancel the movement algorithm if the cell is not empty since if we are in noPoint
+	# we already know it's not a collectible
+	bne	t1, zero, outInput
+	
 continueMovement1:
+	# replace previous cell with empty
 	mv	t1, zero
 	sb	t1, 0(t0)
+	# replace target with player
 	li	t1, 9
 	sb	t1, 0(t4)
 	
@@ -772,10 +878,98 @@ moveRt2:
 	j	outInput
 outInput:
 	
-	# call collectible updating function (for when the player collects every objective on screen)
+	# enter collectible updating function (only for when the player collects every objective on screen)
 	lw	t0, collectibleCount
-	bne	t0, zero, backgroundRender
-	jal	updateCollectibles
+	bne	t0, zero, finishColupdates
+updateCollectibles:
+	# function should also only run while there are still updates
+	lw	t0, collectibleUpdates
+	bgt	t0, zero, proceedColupdates
+	# if there are no more collectibles on the screen and no updates to be made, player wins
+	beq	t0, zero, flagVictory
+	j	finishColupdates
+flagVictory:
+	li	t0, 1
+	sw	t0, victoryFlag, t1
+	j	finishColupdates
+proceedColupdates:
+	# get information from memory
+	la	s0, collectibleMatrices
+	lw	s1, updateCounter
+	lw	s2, collectibleCount
+	la	s3, currentLevel
+	addi	s3, s3, 8
+	
+	# set s0 to properly point at the update matrix
+	li	t0, 300
+	mul	t1, s1, t0
+	add	s0, s0, t1
+	
+	# matrix is 300 bytes long, so we iterate 300 times
+	li	t0, 300
+	li	t1, 0
+	
+checkColupdates:
+	# see comment above
+	bge	t1, t0, finishColchecks
+	
+	lb	s4, 0(s0)
+	beq	s4, zero, continueColchecks
+	
+	# load cell type
+	lb	s4, 0(s3)
+	
+	# it only has to update these cell types
+	beq	s4, zero, updateEmpty
+	li	t2, 2
+	beq	s4, t2, updateBreakable
+	j	continueColchecks
+
+updateEmpty:
+	li	t2, 3
+	sb	t2, 0(s3)
+	# collectible amount is increased if a collectible is placed
+	addi	s2, s2, 1
+	j	continueColchecks
+
+updateBreakable:
+	li	t2, 4
+	sb	t2, 0(s3)
+	addi	s2, s2, 1
+	j	continueColchecks
+	
+continueColchecks:
+	# only increments
+	addi	s0, s0, 1
+	addi	s3, s3, 1
+	addi	t1, t1, 1
+	j	checkColupdates
+	
+finishColchecks:
+	# save new collectible amount
+	la	s0, collectibleCount
+	sw	s2, 0(s0)
+	
+	# increment update counter
+	lw	s0, updateCounter
+	addi	s0, s0, 1
+	sw	s0, updateCounter, s1
+	
+	# decrement update queue
+	lw	s0, collectibleUpdates
+	addi	s0, s0, -1
+	sw	s0, collectibleUpdates, s1
+	
+	# update current collectible
+	lw	s0, updateCounter
+	li	t0, 4
+	mul	s0, s0, t0
+	la	s1, collectibleTypes
+	la	s2, currentCollectible
+	add	s1, s1, s0
+	lw	t0, 0(s1)
+	sw	t0, 0(s2)
+finishColupdates:
 
 backgroundRender:
 	mv	a0, zero
@@ -790,6 +984,7 @@ menuRender:
 	# Score Digits: Y 153, X 17, 25, 33, 41 respectively 
 	# Current Item: Y 206, X 24
 	# I deeply apologize for how unelegant the following code is.
+	# This procedure renders the numbers on the display. It will appear again later for accurate scoring.
 	
 	# level number renderer
 	la	a2, numbers
@@ -952,6 +1147,8 @@ renderWidthLoop:
 	beq	t2, t3, renderBreaking
 	
 renderEmpty:
+	# at first, the rendering functions really only did rendering, but some of them now do manipulation
+	# the reason for the is that if we get strange values on a cell we can call this as a panic button
 	li	t2, 0
 	sb	t2, 0(s0)
 	la	a2, empty
@@ -971,6 +1168,8 @@ renderBreakable:
 	j	continueRW
 
 renderCollectible:
+	# there are some other reasons like updating animated positions
+	# the function above does almost the same thing, the one below even more so
 	li	t2, 3
 	sb	t2, 0(s0)
 	la	a2, collectibles
@@ -991,6 +1190,7 @@ renderBreakableC:
 	j	continueRW
 	
 renderEnemy:
+	# the intricate process of enemy rendition is explained in the article
 	# needs to use t0 and t1 to find out ID of the enemy in this position and render according to state and type
 	la	s3, enemyPositions
 	li	s5, 8
@@ -1054,19 +1254,21 @@ renderTonho:
 	j	continueRW
 
 renderPlayer:
-	# render selector (now using a spritesheet)
+	# render selector using states and the spritesheet
 	li	a3, 256
 	lw	t3, playerState
 	mul	a3, t3, a3
 	lw	t3, playerBreaking
-	beq	t3, zero, noBreak
+	beq	t3, zero, noPlayerBreak
 	li	t3, 1024
 	add	a3, t3, a3
-noBreak:
+noPlayerBreak:
 	la	a2, char
 	jal	displayPrint
 	j	continueRW
 
+
+	# The rendering functions below call cell updates when necessary
 renderBuilding:
 	lw	t0, playerEnergy
 	lw	t1, maxPlayerEnergy
@@ -1096,18 +1298,20 @@ renderBreaking1:
 	j	continueRW
 
 continueRW:
+	# recover tempwidth and height from memory
 	lw	t0, tempwidth
 	lw	t1, tempheight
-	# recover tempwidth and height from memory
-	addi	t0, t0, 1
 	# increment tempwidth by one
-	addi	s0, s0, 1
+	addi	t0, t0, 1
 	# data pointer goes to adjacent matrix object
+	addi	s0, s0, 1
 	j	renderWidthLoop
+	
 renderWidthEnd:
-	addi	t1, t1, 1
 	# increment tempheight by one
+	addi	t1, t1, 1
 	j	renderHeightLoop
+	
 mapRenderEnd:
 	
 	jal	frameSwitch
@@ -1127,6 +1331,7 @@ continueLoop: j gameLoop
 
 gameOver:
 	
+	# renders a red effect on the screen for one second when the game is over
 	mv	a0, zero
 	mv	a1, zero
 	la	a2, death_overlay
@@ -1138,6 +1343,7 @@ gameOver:
 	li	a7, 32
 	ecall
 	
+	# render the gameover screen
 	mv	a0, zero
 	mv	a1, zero
 	la	a2, gameover
@@ -1159,18 +1365,16 @@ overInput:
 victoryScreen:
 
 	# below are carbon copies of menuRender and renderBackground functions
-	# necessary because they're not callable
+	# necessary because they're not callable (calling functions recursively requires using the stack and we have no clue how)
+	# would've been cool if we learned. Maybe if the professor hadn't lost 6 of his classes to holidays on Thursdays this semester.
+	# instead of using the stack, one could just create a list that acts as a stack
+	# truth be told I'm just lazy
 	
 	mv	a0, zero
 	mv	a1, zero
 	la	a2, levelBackground
 	jal	displayPrint
 	
-	# Menu positions for reference:
-	# Level Number: Y 70 X 29
-	# Timer Digits: Y 113, X 16, 24, 34, 42 respectively
-	# Score Digits: Y 153, X 17, 25, 33, 41 respectively 
-	# Current Item: Y 206, X 24
 	# I once again deeply apologize for how unelegant the following code is.
 	
 	# level number renderer
@@ -1277,6 +1481,10 @@ victoryScreen:
 	mv	a3, zero
 	jal	displayPrint
 	jal	frameSwitch
+	
+	# Finished rendering numbers
+	
+	# Code below is mostly placeholding
 
 	li	a0, 2500
 	li	a7, 32
@@ -1302,9 +1510,12 @@ frameSwitch:
 	# the algorithm for switching itself below is rather self-explanatory
 	lui	t0, 0x00100
 	lw	t1, currentframeaddress
+	# invert the third byte's last bit (left to right)(This switches frames in essence)
 	xor	t1, t1, t0
+	# save nthe new value
 	sw	t1, currentframeaddress, t0
 	
+	# display the new frame, similarly through bit inversion, this time of the first bit in this address
 	lw	t1, displayedframeaddress
 	lw	t2, 0(t1)
 	xori	t2, t2, 1
@@ -1319,159 +1530,77 @@ displayPrint:
 	# a2 = image pointer
 	# a3 = image selector (for spritesheets)
 	
-	lw	t5, 0(a2)
 	# t5 = width (x) of image
-	addi	a2, a2, 4
-	lw	t6, 0(a2)
+	lw	t5, 0(a2)
+	
 	# t6 = height (y) of image
 	addi	a2, a2, 4
+	lw	t6, 0(a2)
+	
 	# a2 = start of image pixel information
+	addi	a2, a2, 4
+	# select image using a3 (for spritesheets)
 	add	a2, a3, a2
-	# select image using a3
 	
-	# illegal printing prevention below
+	# illegal printing prevention
 	
-	blt	a0, zero, displayPrintEnd
 	# if starting x position is less than zero, print nothing
-	blt	a1, zero, displayPrintEnd
+	blt	a0, zero, displayPrintEnd
 	# if starting y position is less than zero, print nothing
+	blt	a1, zero, displayPrintEnd
+	# if part of the image falls beyond the display width, print nothing
 	li	t1, 320
 	add	t0, t5, a0
 	bgt	t0, t1, displayPrintEnd
-	# if part of the image falls beyond the display width, print nothing
+	# if part of the image falls beyond the display height, print nothing
 	li	t1, 240
 	add	t0, t6, a1
 	bgt	t0, t1, displayPrintEnd
-	# if part of the image falls beyond the display height, print nothing
 	
 	# below are calculations for the display pointer.
 	# just knowing it works is enough
+	# if you spend enough time reading it you'll understand it
+	# t3 = bitmap display location pointer
 	li	t3, 320
 	mul	a1, t3, a1
 	lw	t3, currentframeaddress
 	add	t3, a1, t3
 	add	t3, a0, t3
-	# t3 = bitmap display location pointer
 	
-	li	t2, 0
 	# t2 = currentY
+	li	t2, 0
 yLoop:
-	bge	t2, t6, displayPrintEnd
 	# while currentY < height
-	li	t1, 0
+	bge	t2, t6, displayPrintEnd
 	# init currentX to 0
+	li	t1, 0
 xLoop:
-	bge	t1, t5, xEnd
 	# while currenX < width
+	bge	t1, t5, xEnd
+	# copy information from image to bitmap display according to the relevant pointers
 	lw	t4, 0(a2)
 	sw	t4, 0(t3)
-	# copy information from image to bitmap display according to the relevant pointers
 	
+	# increments
 	addi	a2, a2, 4
 	addi	t3, t3, 4
 	addi	t1, t1, 4
-	# increment image pointer, display pointer and currentX by one
 	j	xLoop
 xEnd:
+	# next BMD line, reset position according to width
 	addi	t3, t3, 320
 	sub	t3, t3, t5
-	# next BMD line, reset position according to width
-	addi	t2, t2, 1
+	
 	# increment currentY
+	addi	t2, t2, 1
 	j	yLoop	
 displayPrintEnd:
 	# reset a3 for safety purposes (it is only used by display print and is never reset anywhere)
 	mv	a3, zero
 	ret
-
-updateCollectibles:
-	# function is only run when all collectibles have been attained
-	# function should only run while there are still updates
-	lw	t0, collectibleUpdates
-	bgt	t0, zero, proceedColupdates
-	# if there are no more collectibles on the screen and no updates to be made, player wins
-	beq	t0, zero, flagVictory
-	j	finishColupdates
-flagVictory:
-	li	t0, 1
-	sw	t0, victoryFlag, t1
-	j	finishColupdates
-proceedColupdates:
-	# get information from memory
-	la	s0, collectibleMatrices
-	lw	s1, updateCounter
-	lw	s2, collectibleCount
-	la	s3, currentLevel
-	addi	s3, s3, 8
-	
-	# set s0 to properly point at the update matrix
-	li	t0, 300
-	mul	t1, s1, t0
-	add	s0, s0, t1
-	
-	li	t0, 300
-	li	t1, 0
-	
-checkColupdates:
-	bge	t1, t0, finishColchecks
-	
-	lb	s4, 0(s0)
-	beq	s4, zero, continueColchecks
-	
-	lb	s4, 0(s3)
-	
-	beq	s4, zero, updateEmpty
-	li	t2, 2
-	beq	s4, t2, updateBreakable
-	j	continueColchecks
-
-updateEmpty:
-	li	t2, 3
-	sb	t2, 0(s3)
-	addi	s2, s2, 1
-	j	continueColchecks
-
-updateBreakable:
-	li	t2, 4
-	sb	t2, 0(s3)
-	addi	s2, s2, 1
-	j	continueColchecks
-	
-continueColchecks:
-	addi	s0, s0, 1
-	addi	s3, s3, 1
-	addi	t1, t1, 1
-	j	checkColupdates
-	
-finishColchecks:
-	# save new collectible amount
-	la	s0, collectibleCount
-	sw	s2, 0(s0)
-	
-	# increment update counter
-	lw	s0, updateCounter
-	addi	s0, s0, 1
-	sw	s0, updateCounter, s1
-	
-	# decrement update queue
-	lw	s0, collectibleUpdates
-	addi	s0, s0, -1
-	sw	s0, collectibleUpdates, s1
-	
-	# update current collectible
-	lw	s0, updateCounter
-	li	t0, 4
-	mul	s0, s0, t0
-	la	s1, collectibleTypes
-	la	s2, currentCollectible
-	add	s1, s1, s0
-	lw	t0, 0(s1)
-	sw	t0, 0(s2)
-
-finishColupdates:
-	ret
 	
 exitProgram:
+	# exitProgram was placed way down here to prevent drops
 	li	a7, 10
 	ecall
 # Nirva was here >:3

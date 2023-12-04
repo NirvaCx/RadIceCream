@@ -101,3 +101,12 @@ Changes since v9:
 - introduced proper enemy rendering system (now renders according to type and state)
 - small fixes to level information files and level 3's hitboxes
 - the player must now face a direction before they may move in it. This significantly improves controlability
+
+0.3.2a - 04/12/2023
+
+- modularized the collectible value decrement, which is now level-dependent.
+- overhauled code comments and documentation (long overdue this one)
+- reorganized parts of the code
+- tick counter register is no longer capped at all (previously capped at 200)
+- added a placeholder level select menu to fix the painfully misleading main menu options
+- a BUNCH of small fixes

@@ -34,3 +34,5 @@ l3collectibleTypes:
 .word	0, 1, 3
 l3timer:
 .word	300
+l3coldec:
+.word	15
