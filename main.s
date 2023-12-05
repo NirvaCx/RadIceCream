@@ -1583,7 +1583,7 @@ mapRenderEnd:
 	addi	s11, s11, 1
 	
 	li	a7, 32
-	li	a0, 45
+	li	a0, 44
 	ecall
 
 continueLoop: j gameLoop
