@@ -124,7 +124,7 @@ levelNumber:
 
 # states up, down, left and right are 0, 1, 2 and 3 respectively
 playerState:
-.word	1
+.word	0
 
 # boolean value - is the player pressing space?
 playerBreaking:
@@ -333,6 +333,9 @@ levelLoader:
 	# reset playerState
 	li	t0, 1
 	sw	t0, playerState, t1
+	# reset lookAheadPointer
+	li	t0, 20
+	sw	t0, lookAheadPointer, t1
 	# reset points
 	li	t0, 0
 	sw	t0, points, t1
@@ -637,8 +640,263 @@ resetPlayerBreaking:
 	li	s0, 0
 	sw	s0, playerBreaking, s1
 outResetPlayerBreaking:
+
+	# enemy ai for movement should be run every 0.8s (16 ticks)
+	# enemy ai should never be run at the very start of the match
+	beq	s11, zero, outEnemyAI
+	li	t0, 0
+	# t0 will hold the current enemy ID
+	li	t3, 16
+	rem	t3, s11, t3
+	beq	t3, zero, enemyAI
+	j	outEnemyAI
+enemyAI:
+	# once there are no more enemies to verify, continue
+	lw	t3, enemyAmount
+	bge	t0, t3, outEnemyAI
 	
-getInput:
+	# gathering enemy information
+	# position (s0 and s1)
+	la	t1, enemyPositions
+	li	t3, 3
+	mul	t3, t0, t3
+	add	t1, t3, t1
+	lb	s0, 0(t1)
+	lb	s1, 1(t1)
+	
+	# type (s3)
+	la	t1, enemyTypes
+	add	t1, t0, t1
+	lb	s3, 0(t1)
+	
+	# states (s4 and s5)
+	la	t1, enemyStates
+	li	t3, 2
+	mul	t3, t0, t3
+	add	t1, t3, t1
+	lb	s4, 0(t1)
+	lb	s5, 1(t1)
+	
+	# of all the variables above, only position and state will indeed be modified.
+	
+	# establish enemy location pointer on the matrix (t5)
+	la	t1, currentLevel
+	addi	t1, t1, 8
+	li	t3, 20
+	mul	t3, s1, t3
+	add	t1, t3, t1
+	add	t5, s0, t1
+	
+	# s6 will hold the amount of times the enemy tried to decide its direction
+	# if greater than or equal to 4, the enemy is stuck and cannot move.
+	li	s6, 0
+movementDecision:
+	# the specific order below might seem strange but it iterates through states clockwise.
+	beq	s4, zero, moveUpE
+	li	t3, 3
+	beq	s4, t3, moveRtE
+	li	t3, 1
+	beq	s4, t3, moveDnE
+	li	t3, 2
+	beq	s4, t3, moveLtE
+	# if somehow the enemy state is weird it goes to the next enemy
+	j	nextEnemy
+	
+moveUpE:
+	# The reason for these specific values are better explained in the player movement function below enemyAI
+	# s7, s8 and s9 will represent the other blocks around the enemy (to the left, to the right and back)
+	li	t3, -20
+	li	s7, -1
+	li	s8, 1
+	li	s9, 20
+	li	s4, 0
+	j	moveEnemy
+
+moveDnE:
+	li	t3, 20
+	li	s7, 1
+	li	s8, -1
+	li	s9, -20
+	li	s4, 1
+	j	moveEnemy
+
+moveLtE:
+	li	t3, -1
+	li	s7, 20
+	li	s8, -20
+	li	s9, 1
+	li	s4, 2
+	j	moveEnemy
+
+moveRtE:
+	li	t3, 1
+	li	s7, -20
+	li	s8, 20
+	li	s9, -1
+	li	s4, 3
+	j	moveEnemy
+	
+moveEnemy:
+	# establish target location pointer
+	add	t6, t5, t3
+	# s2 is target cell container
+	lb	s2, 0(t6)
+	# game ends if enemy collides with player
+	li	t3, 9
+	beq	s2, t3, gameOver
+	# enemy may move onto empty cells only
+	bne	s2, zero, repeatDecision
+	j	continueMoveEnemy
+
+repeatDecision:
+	# if too many repeat decisions are made, next enemy may be moved
+	li	t3, 4
+	bge	s6, t3, nextEnemy
+	addi	s6, s6, 1
+	
+	# load relative spaces to find out which are free according to
+	# randomly selected priority
+	add	s7, t5, s7
+	lb	s7, 0(s7)
+	add	s8, t5, s8
+	lb	s8, 0(s8)
+	add	s9, t5, s9
+	lb	s9, 0(s9)
+	
+	# randomly prioritize left, right or back
+	li	a0, 46391665
+	li	a1, 3
+	li	a7, 42
+	ecall
+	# s10 will be used to find the player
+	li	s10, 9
+	
+	beq	a0, zero, leftPriority
+	li	t3, 1
+	beq	a0, t3, rightPriority
+	li	t3, 2
+	beq	a0, t3, backPriority
+	li	t3, 3
+	beq	a0, t3, backPriority
+leftPriority:
+	beq	s7, zero, newLeftDirection
+	beq	s7, s10, gameOver
+	beq	s8, zero, newRightDirection
+	beq	s8, s10, gameOver
+	beq	s9, zero, newBackDirection
+	beq	s9, s10, gameOver
+	j	nextEnemy
+rightPriority:
+	beq	s8, zero, newRightDirection
+	beq	s8, s10, gameOver
+	beq	s7, zero, newLeftDirection
+	beq	s7, s10, gameOver
+	beq	s9, zero, newBackDirection
+	beq	s9, s10, gameOver
+	j	nextEnemy
+backPriority:
+	beq	s9, zero, newBackDirection
+	beq	s9, s10, gameOver
+	beq	s7, zero, newLeftDirection
+	beq	s7, s10, gameOver
+	beq	s8, zero, newRightDirection
+	beq	s8, s10, gameOver
+	j	nextEnemy
+
+newLeftDirection:
+	li	t3, 0
+	beq	s4, t3, moveLtE
+	li	t3, 1
+	beq	s4, t3, moveRtE
+	li	t3, 2
+	beq	s4, t3, moveDnE
+	li	t3, 3
+	beq	s4, t3, moveUpE
+newRightDirection:
+	li	t3, 1
+	beq	s4, t3, moveLtE
+	li	t3, 0
+	beq	s4, t3, moveRtE
+	li	t3, 3
+	beq	s4, t3, moveDnE
+	li	t3, 2
+	beq	s4, t3, moveUpE
+newBackDirection:
+	li	t3, 3
+	beq	s4, t3, moveLtE
+	li	t3, 2
+	beq	s4, t3, moveRtE
+	li	t3, 0
+	beq	s4, t3, moveDnE
+	li	t3, 1
+	beq	s4, t3, moveUpE
+	
+	j	repeatDecision
+
+continueMoveEnemy:
+	# erase current position and update target position
+	sb	zero, 0(t5)
+	li	t3, 5
+	sb	t3, 0(t6)
+	
+	# saving new information
+	
+	# save direction state
+	la	t1, enemyStates
+	li	t3, 2
+	mul	t3, t0, t3
+	add	t1, t3, t1
+	sb	s4, 0(t1)
+	
+	beq	s4, zero, moveUpE2
+	li	t3, 1
+	beq	s4, t3, moveDnE2
+	li	t3, 2
+	beq	s4, t3, moveLtE2
+	li	t3, 3
+	beq	s4, t3, moveRtE2
+
+moveUpE2:
+	addi	s1, s1, -1
+	j	saveEnemyPosition
+
+moveDnE2:
+	addi	s1, s1, 1
+	j	saveEnemyPosition
+
+moveLtE2:
+	addi	s0, s0, -1
+	j	saveEnemyPosition
+
+moveRtE2:
+	addi	s0, s0, 1
+	j	saveEnemyPosition
+	
+saveEnemyPosition:
+	# pretty self explanatory
+	la	t1, enemyPositions
+	li	t3, 3
+	mul	t3, t0, t3
+	add	t1, t3, t1
+	sb	s0, 0(t1)
+	sb	s1, 1(t1)
+	j	nextEnemy
+
+enemyPanic:
+	# This erases the enemy in case of a bad glitch that messes with its direction and desyncs
+	# enemy position from the actual cell the enemy is in
+	# such a desync would be very bad; it'd be as if the enemy's soul just left its body
+	# and they are now both wandering aimlessly
+	sb	zero, 0(t6)
+	j	nextEnemy
+
+nextEnemy:
+	addi	t0, t0, 1
+	j	enemyAI
+	
+outEnemyAI:
+
+playerInput:
 	lw	t0, keyboardAddress
 	lw	t1, 0(t0)
 	andi	t1, t1, 1
@@ -975,6 +1233,7 @@ backgroundRender:
 	mv	a0, zero
 	mv	a1, zero
 	la	a2, levelBackground
+	mv	a3, zero
 	jal	displayPrint
 
 menuRender:
