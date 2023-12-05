@@ -1579,7 +1579,9 @@ mapRenderEnd:
 	lw	t0, victoryFlag
 	bne	t0, zero, victoryScreen
 	
-	# define tickrate
+	# define tick period (equation: sleep + gameloop runtime = 50ms)
+	# example: if the gameloop takes ~10ms to run, the sleep call below should use 40ms
+	
 	addi	s11, s11, 1
 	
 	li	a7, 32
