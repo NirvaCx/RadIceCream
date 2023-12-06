@@ -117,3 +117,9 @@ Changes since v9:
 - changes to level 1's layout
 - small fix to level 3's hitboxes
 - fixed background render not providing offset argument to displayPrint (makes sound effects possible)
+
+0.4.1a - 06/12/2023
+- Small art changes;
+- Fully revamped level select and victory screens;
+- Made level 3's game design just a little less unbearable;
+- Just reminding you Lamar is there, frozen.
