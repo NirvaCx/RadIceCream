@@ -15,4 +15,5 @@ https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=ms
 https://docs.google.com/document/d/14FeMiUpzO-p7x7qS6Kqn5h73lcUuJNAL-eTsIOBgR3g/edit?usp=sharing
 
 ## Project Archive
+Earlier versions, funny placeholder images, development videos, and all sorts of other fun things.<br>
 https://drive.google.com/drive/folders/1qve_bUNcumaPKPH73_zFgW3DIwvwJ50J?usp=sharing
