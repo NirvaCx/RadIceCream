@@ -110,3 +110,10 @@ Changes since v9:
 - tick counter register is no longer capped at all (previously capped at 200)
 - added a placeholder level select menu to fix the painfully misleading main menu options
 - a BUNCH of small fixes
+
+0.4.0a - 05/12/2023
+
+- Introduced enemy movement AI, decided it won't be deterministic
+- changes to level 1's layout
+- small fix to level 3's hitboxes
+- fixed background render not providing offset argument to displayPrint (makes sound effects possible)
