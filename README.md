@@ -13,3 +13,6 @@ https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=ms
 
 ## Article (Work in Progress)
 https://docs.google.com/document/d/14FeMiUpzO-p7x7qS6Kqn5h73lcUuJNAL-eTsIOBgR3g/edit?usp=sharing
+
+## Project Archive
+https://drive.google.com/drive/folders/1qve_bUNcumaPKPH73_zFgW3DIwvwJ50J?usp=sharing
