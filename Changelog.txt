@@ -123,3 +123,10 @@ Changes since v9:
 - Fully revamped level select and victory screens;
 - Made level 3's game design just a little less unbearable;
 - Just reminding you Lamar is there, frozen.
+- Changes to the tickrate to accomodate for code complexity
+- Level select now indicates which levels are locked with a padlock
+- Added new cheats:
+	+ Win (Press [0] in-game)
+	+ Lose (Press [-] in-game)
+	+ Lock levels (Press [-] in level select)
+- Added project archive to github readme

@@ -40,6 +40,7 @@ unlockedLevels:
 
 .include "level_information/menu_screens/title_screen.data"
 .include "level_information/menu_screens/level_select.data"
+.include "level_information/menu_screens/padlockoverlay.data"
 .include "level_information/menu_screens/pause_overlay.data"
 .include "level_information/menu_screens/death_overlay.data"
 .include "level_information/menu_screens/gameover.data"
@@ -228,6 +229,30 @@ levelSelect:
 	mv	a1, zero
 	la	a2, level_select
 	jal	displayPrint
+	
+	# padlocks rendering
+	lw	s0, unlockedLevels
+	la	s1, padlockoverlay
+	
+padlock2:
+	li	t0, 2
+	bge	s0, t0, padlock3
+	li	a0, 144
+	li	a1, 112
+	mv	a2, s1
+	mv	a3, zero
+	jal	displayPrint
+padlock3:
+	li	t0, 3
+	bge	s0, t0, finishPadlocks
+	li	a0, 208
+	li	a1, 112
+	mv	a2, s1
+	mv	a3, zero
+	jal	displayPrint
+	
+finishPadlocks:
+	
 	jal	frameSwitch
 	
 levelInput:
@@ -242,6 +267,9 @@ levelInput:
 	# pressing 0 is a cheat to unlock all levels
 	li	t2, 0x30
 	beq	t1, t2, unlockLevels
+	# pressing [-] is a cheat to lock levels
+	li	t2, 0x2D
+	beq	t1, t2, lockLevels
 	
 	# load level according to keyboard numbers
 	li	t2, 0x031
@@ -260,7 +288,13 @@ unlockLevels:
 	# unlock levels and go back to level prompt
 	li	t0, 9
 	sw	t0, unlockedLevels, t1
-	j	levelInput
+	j	levelSelect
+
+lockLevels:
+	# lock levels and go back to level prompt
+	li	t0, 1
+	sw	t0, unlockedLevels, t1
+	j	levelSelect
 
 load1:
 	li	t0, 1
@@ -912,6 +946,7 @@ continueInput:
 	# d = 0x64
 	# space = 0x20
 	# p = 0x70
+	# - = 0x2D
 	
 	# set matrix pointer t0 to player position
 	# t2 is used as a temporary for this process, getting mostly values from memory
@@ -938,17 +973,31 @@ continueInput:
 	beq	t1, t2, doSpecial
 	li	t2, 0x70
 	beq	t1, t2, flagPause
+	li	t2, 0x30
+	beq	t1, t2, cheatVictory
+	li	t2, 0x2D
+	beq	t1, t2, cheatLose
+	
 	# if the input was not in the selector, no action is performed
 	j	outInput
+	
+flagPause:
+	li	t0, 1
+	sw	t0, levelPaused, t1
+	j	outInput
+
+cheatVictory:
+	li	t0, 1
+	sw	t0, victoryFlag, t1
+	j	outInput
+
+cheatLose:
+	j	gameOver
 	
 	# the four labels below all do the same thing for different movements
 	# t3 will store the number that will be used to create the pointer
 	# that points to the cell towards which the character just tried to move
 	# they also update the player's state accordingly
-flagPause:
-	li	t0, 1
-	sw	t0, levelPaused, t1
-	j	outInput
 	
 moveUp:
 	# these are all similar
@@ -1747,7 +1796,7 @@ victoryScreen:
 	
 	# Code below is mostly placeholding
 
-	li	a0, 2500
+	li	a0, 4000
 	li	a7, 32
 	ecall
 	
