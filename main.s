@@ -18,6 +18,8 @@
 #
 # 2 - Register s11 is exclusively used as a tick counter. 
 
+# good luck lol
+
 .data
 
 ###############
