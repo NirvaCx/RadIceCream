@@ -121,6 +121,24 @@ currentCollectible:
 levelNumber:
 .word	0
 
+# Music info
+currentSongID:
+.word	0 #
+songLength:
+.word 	0
+
+# songNotes and notesDuration work in pairs, so they use the same pointer (currentNote)
+songNotes: # array that contains the pitch value of each note
+.byte 	0
+notesDuration: # array that contains the duration of each note
+.byte 	0
+
+currentNote: # pointer to the current note (and its duration)
+.word 	0
+ 
+ 
+
+
 ########################
 ### player variables ###
 ########################
@@ -631,6 +649,7 @@ outPauseLevel:
 	remu	t0, s11, t0
 	beq	t0, zero, timerDecrement
 	j	outTimerDecrement
+	
 timerDecrement:
 	lw	t0, levelTimer
 	addi	t0, t0, -1
@@ -677,6 +696,12 @@ resetPlayerBreaking:
 	sw	s0, playerBreaking, s1
 outResetPlayerBreaking:
 
+songRunner:
+	
+
+
+
+outSongRunner:
 	# enemy ai for movement should be run every 0.8s (16 ticks)
 	# enemy ai should never be run at the very start of the match
 	beq	s11, zero, outEnemyAI
@@ -1128,11 +1153,12 @@ continueMovement0:
 	# collision with a collectible will replace the collectible with empty space,
 	# add 100 points, remove 1 from the collectible counter and finish the movement algorithm
 	
-	li	a0, 62
-	li	a2, 31
-	li	a1, 300
-	li	a3, 30
-	li	a7, 31
+	# Play sfx
+	li	a0, 62	# Pitch 		
+	li	a1, 300	# Duration in ms
+	li	a2, 31	# Instrument
+	li	a3, 30	# Volume
+	li	a7, 31	# MidiOut syscall
 	ecall
 	
 	lw	s0, points
