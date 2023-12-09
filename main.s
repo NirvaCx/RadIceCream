@@ -1127,6 +1127,14 @@ continueMovement0:
 	bne	t1, t2, noPoint
 	# collision with a collectible will replace the collectible with empty space,
 	# add 100 points, remove 1 from the collectible counter and finish the movement algorithm
+	
+	li	a0, 62
+	li	a2, 31
+	li	a1, 300
+	li	a3, 30
+	li	a7, 31
+	ecall
+	
 	lw	s0, points
 	lw	s2, collectibleValue
 	add	s2, s0, s2
