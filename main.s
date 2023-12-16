@@ -604,6 +604,8 @@ outICM:
 	lw	s1, 0(s0)
 	sw	s1, currentCollectible, s0
 	
+runtimeLoop:
+	
 gameLoop:
 	
 	# level pauser
@@ -696,12 +698,6 @@ resetPlayerBreaking:
 	sw	s0, playerBreaking, s1
 outResetPlayerBreaking:
 
-songRunner:
-	
-
-
-
-outSongRunner:
 	# enemy ai for movement should be run every 0.8s (16 ticks)
 	# enemy ai should never be run at the very start of the match
 	beq	s11, zero, outEnemyAI
