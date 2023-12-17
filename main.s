@@ -73,6 +73,7 @@ unlockedLevels:
 .include "sprites/char.data"
 .include "sprites/building0.data"
 .include "sprites/breaking0.data"
+.include "sprites/explosion.data"
 
 #########################
 ### ingame variables  ###
@@ -135,8 +136,13 @@ notesDuration: # array that contains the duration of each note
 
 currentNote: # pointer to the current note (and its duration)
 .word 	0
- 
- 
+
+explosionMatrix:
+.space	300
+explosionFlag:
+.word	0
+explosionState:
+.word	0
 
 
 ########################
@@ -398,7 +404,27 @@ levelLoader:
 	# reset player energy
 	li	t0, 10
 	sw	t0, playerEnergy, t1
+	# reset explosionState
+	li	t0, 0
+	sw	t0, explosionState, t1
+	# reset explosionFlag
+	li	t0, 0
+	sw	t0, explosionFlag, t1
+
+	# reset explosionMatrix
+	la	s0, explosionMatrix
+	li	t2, 75
+	li	t0, 0
+explosionMatrixReset:
+	bge	t0, t2, outExplosionMatrixReset
+	li	t1, 0
+	sw	t1, 0(s0)
 	
+	addi	t0, t0, 1
+	addi	s0, s0, 4
+	j	explosionMatrixReset
+outExplosionMatrixReset:
+
 	# reset enemy states
 	la	s0, enemyStates
 	li	t0, 4
@@ -705,8 +731,27 @@ outResetPlayerBreaking:
 	# t0 will hold the current enemy ID
 	li	t3, 16
 	rem	t3, s11, t3
-	beq	t3, zero, enemyAI
+	beq	t3, zero, flagEnMov
+	
+	li	t3, 160
+	li	t2, 8
+	sub	t2, s11, t2
+	rem	t3, t2, t3
+	beq	t3, zero, flagEnExp
+	
 	j	outEnemyAI
+flagEnMov:
+	li	t3, 0
+	sw	t3, explosionFlag, t2
+	j	enemyAI
+
+flagEnExp:
+	li	t3, 1
+	sw	t3, explosionFlag, t2
+	li	t3, 0
+	sw	t3, explosionState, t2
+	j	enemyAI
+	
 enemyAI:
 	# once there are no more enemies to verify, continue
 	lw	t3, enemyAmount
@@ -732,10 +777,13 @@ enemyAI:
 	mul	t3, t0, t3
 	add	t1, t3, t1
 	lb	s4, 0(t1)
-	lb	s5, 1(t1)
+	lb	s5, 1(t1)	
 	
-	# of all the variables above, only position and state will indeed be modified.
+	lw	t3, explosionFlag
+	beq	t3, zero, enemyMovement
+	j	enemyExplosion
 	
+enemyMovement:
 	# establish enemy location pointer on the matrix (t5)
 	la	t1, currentLevel
 	addi	t1, t1, 8
@@ -800,7 +848,9 @@ moveEnemy:
 	lb	s2, 0(t6)
 	# game ends if enemy collides with player
 	li	t3, 9
-	beq	s2, t3, gameOver
+	bne	s2, t3, noGameOverEnemy
+	j	gameOver
+noGameOverEnemy:
 	# enemy may move onto empty cells only
 	bne	s2, zero, repeatDecision
 	j	continueMoveEnemy
@@ -946,6 +996,51 @@ enemyPanic:
 	# and they are now both wandering aimlessly
 	sb	zero, 0(t6)
 	j	nextEnemy
+
+enemyExplosion:
+	# set matrixExplosion's line and column for this enemy to 1
+	# reminder to self: do not modify s0, s1, s3 or t0
+	beq	s3, zero, nextEnemy
+
+explodeX:
+	la	s4, explosionMatrix
+	li	t3, 20
+	mul	t3, s1, t3
+	add	s4, s4, t3
+	
+	li	t1, 0
+	li	t2, 20
+explodeXloop:
+	bge	t1, t2, explodeY
+	li	t3, 1
+	sb	t3, 0(s4)
+	
+	addi	s4, s4, 1
+	addi	t1, t1, 1
+	j	explodeXloop
+
+explodeY:
+	la	s4, explosionMatrix
+	add	s4, s4, s0
+	
+	li	t1, 0
+	li	t2, 15
+explodeYloop:
+	bge	t1, t2, setExpState
+	li	t3, 1
+	sb	t3, 0(s4)
+	
+	addi	s4, s4, 20
+	addi	t1, t1, 1
+	j	explodeYloop
+
+setExpState:
+	la	s4, enemyStates
+	li	t3, 2
+	mul	t3, t0, t3
+	add	s4, s4, t3
+	li	t3, 1
+	sb	t3, 1(s4)
 
 nextEnemy:
 	addi	t0, t0, 1
@@ -1653,7 +1748,125 @@ renderWidthEnd:
 	j	renderHeightLoop
 	
 mapRenderEnd:
+
+
+	la	t0, explosionFlag
+	bne	t0, zero, explosionMatrixRender
+	j	outFinishExplosions
+explosionMatrixRender:
+	# s0 points to explosionMatrix and s3 to level matrix
+	la	s3, currentLevel
+	addi	s3, s3, 8
+	la	s0, explosionMatrix
+	# map width and height
+	li	s1, 20
+	li	s2, 15
 	
+	li	t1, 0
+EMRy:
+	bge	t1, s2, outEMR	
+	li	t0, 0
+EMRx:	
+	bge	t0, s1, outEMRx
+	li	t2, 4
+	blt	t0, t2, continueEMRx
+	
+	# set displayPrint arguments for X and Y
+	li	t2, 16
+	mul	a0, t0, t2
+	mul	a1, t1, t2
+	
+	sw	t0, tempwidth, t2
+	sw	t1, tempheight, t2
+	
+	lb	t3, 0(s0)
+	# explosion render selector
+	# should only render where the explosion matrix has a 1
+	beq	t3, zero, outRenderExplosion
+
+renderExplosion:
+	li	t0, 256
+	lw	t1, explosionState
+	la	a2, explosion
+	mul	a3, t0, t1
+	jal	displayPrint
+	
+	# break blocks and/or kill player
+	lb	t3, 0(s3)
+	
+	li	t4, 9
+	beq	t3, t4, gameOver
+	li	t4, 2
+	beq	t3, t4, breakBreakable
+	li	t4, 4
+	beq	t3, t4, breakBreakable_c
+	j	outRenderExplosion
+breakBreakable:
+	sb	zero, 0(s3)
+	j	outRenderExplosion
+breakBreakable_c:
+	li	t0, 3
+	sb	t0, 0(s3)
+	j	outRenderExplosion
+outRenderExplosion:
+
+	lw	t0, tempwidth
+	lw	t1, tempheight
+	
+continueEMRx:
+	
+	# increment pointers and counters
+	addi	s3, s3, 1
+	addi	s0, s0, 1
+	addi	t0, t0, 1
+	j	EMRx
+outEMRx:
+	addi	t1, t1, 1
+	j	EMRy
+
+outEMR:	
+	
+	lw	t0, explosionState
+	addi	t0, t0, 1
+	sw	t0, explosionState, t1
+	li	t1, 6
+	bge	t0, t1, finishExplosions
+	j	outFinishExplosions
+	
+finishExplosions:
+	# reset blow up states
+	# reset explosionMatrix
+	# reset explosion flag and state
+	
+	li	t0, 0
+	sw	t0, explosionFlag, t1
+	sw	t0, explosionState, t1
+	
+	la	s0, explosionMatrix
+	li	t2, 75
+	li	t0, 0
+EMreset:
+	bge	t0, t2, outEMreset
+	li	t1, 0
+	sw	t1, 0(s0)
+	
+	addi	t0, t0, 1
+	addi	s0, s0, 4
+	j	EMreset
+outEMreset:
+	la	s0, enemyStates
+	li	t2, 8
+	li	t0, 0
+enemyExpStateReset:
+	bge	t0, t2, outFinishExplosions
+	li	t1, 0
+	sb	t1, 1(s0)
+	addi	s0, s0, 2
+	addi	t0, t0, 1
+	j	enemyExpStateReset
+
+outFinishExplosions:
+
 	jal	frameSwitch
 	
 	# check for victory
@@ -1669,7 +1882,7 @@ mapRenderEnd:
 	li	a0, 44
 	ecall
 
-continueLoop: j gameLoop
+continueLoop: j runtimeLoop
 
 gameOver:
 	

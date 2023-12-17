@@ -130,3 +130,7 @@ Changes since v9:
 	+ Lose (Press [-] in-game)
 	+ Lock levels (Press [-] in level select)
 - Added project archive to github readme
+
+0.5.0a
+- Added a placeholder testing sound effect
+- Enemy 2 "tonho" now explodes lines and columns. If caught in the explosion, the player dies.
