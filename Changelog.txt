@@ -131,7 +131,10 @@ Changes since v9:
 	+ Lock levels (Press [-] in level select)
 - Added project archive to github readme
 
-0.5.0a
+0.5.0a - 17/12/2023
 - Game now has an executable
 - Added a placeholder testing sound effect
 - Enemy 2 "tonho" now explodes lines and columns. If caught in the explosion, the player dies.
+
+0.5.1a - 18/12/2023
+- Added many, many sound effects.

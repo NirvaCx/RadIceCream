@@ -207,7 +207,9 @@ levelPaused:
 
 # game flags
 victoryFlag:
-.word 0
+.word	0
+gameOverFlag:
+.word	0
 
 # mapRender variables
 tempwidth:
@@ -684,7 +686,9 @@ timerDecrement:
 	sw	t0, levelTimer, t1
 	# game ends if player runs out of time
 	bne	t0, zero, outTimerDecrement
-	j	gameOver
+timerGameOver:
+	li	t0, 2
+	sw	t0, gameOverFlag, t1
 outTimerDecrement:
 	
 	# Collectibles will lose value every minute; value lost is specified on level information file
@@ -745,14 +749,12 @@ flagEnMov:
 	li	t3, 0
 	sw	t3, explosionFlag, t2
 	j	enemyAI
-
 flagEnExp:
 	li	t3, 1
 	sw	t3, explosionFlag, t2
 	li	t3, 0
 	sw	t3, explosionState, t2
 	j	enemyAI
-	
 enemyAI:
 	# once there are no more enemies to verify, continue
 	lw	t3, enemyAmount
@@ -783,7 +785,6 @@ enemyAI:
 	lw	t3, explosionFlag
 	beq	t3, zero, enemyMovement
 	j	enemyExplosion
-	
 enemyMovement:
 	# establish enemy location pointer on the matrix (t5)
 	la	t1, currentLevel
@@ -807,7 +808,6 @@ movementDecision:
 	beq	s4, t3, moveLtE
 	# if somehow the enemy state is weird it goes to the next enemy
 	j	nextEnemy
-	
 moveUpE:
 	# The reason for these specific values are better explained in the player movement function below enemyAI
 	# s7, s8 and s9 will represent the other blocks around the enemy (to the left, to the right and back)
@@ -817,7 +817,6 @@ moveUpE:
 	li	s9, 20
 	li	s4, 0
 	j	moveEnemy
-
 moveDnE:
 	li	t3, 20
 	li	s7, 1
@@ -825,7 +824,6 @@ moveDnE:
 	li	s9, -20
 	li	s4, 1
 	j	moveEnemy
-
 moveLtE:
 	li	t3, -1
 	li	s7, 20
@@ -833,7 +831,6 @@ moveLtE:
 	li	s9, 1
 	li	s4, 2
 	j	moveEnemy
-
 moveRtE:
 	li	t3, 1
 	li	s7, -20
@@ -841,7 +838,6 @@ moveRtE:
 	li	s9, -1
 	li	s4, 3
 	j	moveEnemy
-	
 moveEnemy:
 	# establish target location pointer
 	add	t6, t5, t3
@@ -850,12 +846,13 @@ moveEnemy:
 	# game ends if enemy collides with player
 	li	t3, 9
 	bne	s2, t3, noGameOverEnemy
-	j	gameOver
+enemyGameOver:
+	li	s7, 1
+	sw	s7, gameOverFlag, s8
 noGameOverEnemy:
 	# enemy may move onto empty cells only
 	bne	s2, zero, repeatDecision
 	j	continueMoveEnemy
-
 repeatDecision:
 	# if too many repeat decisions are made, next enemy may be moved
 	li	t3, 4
@@ -888,29 +885,28 @@ repeatDecision:
 	beq	a0, t3, backPriority
 leftPriority:
 	beq	s7, zero, newLeftDirection
-	beq	s7, s10, gameOver
+	beq	s7, s10, enemyGameOver
 	beq	s8, zero, newRightDirection
-	beq	s8, s10, gameOver
+	beq	s8, s10, enemyGameOver
 	beq	s9, zero, newBackDirection
-	beq	s9, s10, gameOver
+	beq	s9, s10, enemyGameOver
 	j	nextEnemy
 rightPriority:
 	beq	s8, zero, newRightDirection
-	beq	s8, s10, gameOver
+	beq	s8, s10, enemyGameOver
 	beq	s7, zero, newLeftDirection
-	beq	s7, s10, gameOver
+	beq	s7, s10, enemyGameOver
 	beq	s9, zero, newBackDirection
-	beq	s9, s10, gameOver
+	beq	s9, s10, enemyGameOver
 	j	nextEnemy
 backPriority:
 	beq	s9, zero, newBackDirection
-	beq	s9, s10, gameOver
+	beq	s9, s10, enemyGameOver
 	beq	s7, zero, newLeftDirection
-	beq	s7, s10, gameOver
+	beq	s7, s10, enemyGameOver
 	beq	s8, zero, newRightDirection
-	beq	s8, s10, gameOver
+	beq	s8, s10, enemyGameOver
 	j	nextEnemy
-
 newLeftDirection:
 	li	t3, 0
 	beq	s4, t3, moveLtE
@@ -940,7 +936,6 @@ newBackDirection:
 	beq	s4, t3, moveUpE
 	
 	j	repeatDecision
-
 continueMoveEnemy:
 	# erase current position and update target position
 	sb	zero, 0(t5)
@@ -963,23 +958,18 @@ continueMoveEnemy:
 	beq	s4, t3, moveLtE2
 	li	t3, 3
 	beq	s4, t3, moveRtE2
-
 moveUpE2:
 	addi	s1, s1, -1
 	j	saveEnemyPosition
-
 moveDnE2:
 	addi	s1, s1, 1
 	j	saveEnemyPosition
-
 moveLtE2:
 	addi	s0, s0, -1
 	j	saveEnemyPosition
-
 moveRtE2:
 	addi	s0, s0, 1
 	j	saveEnemyPosition
-	
 saveEnemyPosition:
 	# pretty self explanatory
 	la	t1, enemyPositions
@@ -989,7 +979,6 @@ saveEnemyPosition:
 	sb	s0, 0(t1)
 	sb	s1, 1(t1)
 	j	nextEnemy
-
 enemyPanic:
 	# This erases the enemy in case of a bad glitch that messes with its direction and desyncs
 	# enemy position from the actual cell the enemy is in
@@ -997,12 +986,19 @@ enemyPanic:
 	# and they are now both wandering aimlessly
 	sb	zero, 0(t6)
 	j	nextEnemy
-
 enemyExplosion:
 	# set matrixExplosion's line and column for this enemy to 1
 	# reminder to self: do not modify s0, s1, s3 or t0
 	beq	s3, zero, nextEnemy
-
+	
+	# sfx
+	li a0, 60	# pitch
+	li a1, 300	# duration
+	li a2, 127	# instrument
+	li a3, 60	# volume
+	li a7, 31
+	ecall
+	
 explodeX:
 	la	s4, explosionMatrix
 	li	t3, 20
@@ -1019,7 +1015,6 @@ explodeXloop:
 	addi	s4, s4, 1
 	addi	t1, t1, 1
 	j	explodeXloop
-
 explodeY:
 	la	s4, explosionMatrix
 	add	s4, s4, s0
@@ -1034,7 +1029,6 @@ explodeYloop:
 	addi	s4, s4, 20
 	addi	t1, t1, 1
 	j	explodeYloop
-
 setExpState:
 	la	s4, enemyStates
 	li	t3, 2
@@ -1042,11 +1036,9 @@ setExpState:
 	add	s4, s4, t3
 	li	t3, 1
 	sb	t3, 1(s4)
-
 nextEnemy:
 	addi	t0, t0, 1
 	j	enemyAI
-	
 outEnemyAI:
 
 playerInput:
@@ -1111,7 +1103,9 @@ cheatVictory:
 	j	outInput
 
 cheatLose:
-	j	gameOver
+	li	t0, 2
+	sw	t0, gameOverFlag, t1
+	j	outInput
 	
 	# the four labels below all do the same thing for different movements
 	# t3 will store the number that will be used to create the pointer
@@ -1179,20 +1173,35 @@ doSpecial:
 	add	t4, t0, t3
 	li	t6, 0
 	
+	# s5 will prevent the sound effect from playing more than once
+	li	s5, 0
+	
 playerBuild:
+	beq	s5, zero, buildSfx
+	j	noBuildSfx
+buildSfx:
+	# sfx
+	li	a0, 60
+	li	a1, 400
+	li	a2, 126
+	li	a3, 100
+	li	a7, 31 
+	ecall
+noBuildSfx:
 	lb	t1, 0(t4)
 	li	t5, 0
 	# build will run if t1 is an open cell (0 or 3)
 	beq	t1, t5, buildBreakable
 	li	t5, 3
 	beq	t1, t5, buildBreakable_c
-	beq	t6, zero, playerDestroy
+	beq	t6, zero, playerDestroySfx
 	j	outInput
 buildBreakable:
 	li	t1, 10
 	sb	t1, 0(t4)
 	add	t4, t4, t3
 	li	t6, 1
+	li	s5, 1
 	j	playerBuild
 buildBreakable_c:
 	# has a collectible inside
@@ -1200,8 +1209,16 @@ buildBreakable_c:
 	sb	t1, 0(t4)
 	add	t4, t4, t3
 	li	t6, 1
+	li	s5, 1
 	j	playerBuild
-
+playerDestroySfx:
+	# sfx
+	li a0, 35	# pitch
+	li a1, 500	# duration
+	li a2, 127	# instrument
+	li a3, 100	# volume
+	li a7, 31
+	ecall
 playerDestroy:
 	lb	t1, 0(t4)
 	li	t5, 2
@@ -1221,7 +1238,6 @@ destroyBreakable_c:
 	sb	t1, 0(t4)
 	add	t4, t4, t3
 	j	playerDestroy
-
 movePlayer:
 	# only allow movement if energy is full
 	lw	t4, maxPlayerEnergy
@@ -1237,7 +1253,8 @@ movePlayer:
 	li	t2, 5
 	# collision with ID 5 (enemy) results in a gameover
 	bne	t1, t2, continueMovement0
-	j	gameOver
+	li	t2, 1
+	sw	t2, gameOverFlag, t6
 continueMovement0:
 	# check for collision with collectible
 	li	t2, 3
@@ -1245,12 +1262,12 @@ continueMovement0:
 	# collision with a collectible will replace the collectible with empty space,
 	# add 100 points, remove 1 from the collectible counter and finish the movement algorithm
 	
-	# Play sfx
-	li	a0, 62	# Pitch 		
-	li	a1, 300	# Duration in ms
-	li	a2, 31	# Instrument
-	li	a3, 30	# Volume
-	li	a7, 31	# MidiOut syscall
+	# sfx
+	li	a0, 98
+	li	a1, 800
+	li	a2, 9
+	li	a3, 800
+	li	a7, 31
 	ecall
 	
 	lw	s0, points
@@ -1267,7 +1284,6 @@ noPoint:
 	# we can cancel the movement algorithm if the cell is not empty since if we are in noPoint
 	# we already know it's not a collectible
 	bne	t1, zero, outInput
-	
 continueMovement1:
 	# replace previous cell with empty
 	mv	t1, zero
@@ -1312,7 +1328,6 @@ moveRt2:
 	sw	s0, playerPosX, t3
 	j	outInput
 outInput:
-	
 	# enter collectible updating function (only for when the player collects every objective on screen)
 	lw	t0, collectibleCount
 	bne	t0, zero, finishColupdates
@@ -1343,7 +1358,6 @@ proceedColupdates:
 	# matrix is 300 bytes long, so we iterate 300 times
 	li	t0, 300
 	li	t1, 0
-	
 checkColupdates:
 	# see comment above
 	bge	t1, t0, finishColchecks
@@ -1359,27 +1373,23 @@ checkColupdates:
 	li	t2, 2
 	beq	s4, t2, updateBreakable
 	j	continueColchecks
-
 updateEmpty:
 	li	t2, 3
 	sb	t2, 0(s3)
 	# collectible amount is increased if a collectible is placed
 	addi	s2, s2, 1
 	j	continueColchecks
-
 updateBreakable:
 	li	t2, 4
 	sb	t2, 0(s3)
 	addi	s2, s2, 1
 	j	continueColchecks
-	
 continueColchecks:
 	# only increments
 	addi	s0, s0, 1
 	addi	s3, s3, 1
 	addi	t1, t1, 1
 	j	checkColupdates
-	
 finishColchecks:
 	# save new collectible amount
 	la	s0, collectibleCount
@@ -1412,7 +1422,6 @@ backgroundRender:
 	la	a2, levelBackground
 	mv	a3, zero
 	jal	displayPrint
-
 menuRender:
 	# Menu positions for reference:
 	# Level Number: Y 70 X 29
@@ -1519,7 +1528,6 @@ menuRender:
 	li	t1, 128
 	mul	a3, t0, t1
 	jal	displayPrint
-	
 mapRender:
 	# initialize level information
 	la	s0, currentLevel
@@ -1581,7 +1589,6 @@ renderWidthLoop:
 	beq	t2, t3, renderBreaking
 	li	t3, 13
 	beq	t2, t3, renderBreaking
-	
 renderEmpty:
 	# at first, the rendering functions really only did rendering, but some of them now do manipulation
 	# the reason for the is that if we get strange values on a cell we can call this as a panic button
@@ -1590,19 +1597,16 @@ renderEmpty:
 	la	a2, empty
 	jal	displayPrint
 	j	continueRW
-
 renderUnbreakable:
 	la	a2, empty
 	jal	displayPrint
 	j	continueRW
-	
 renderBreakable:
 	li	t2, 2
 	sb	t2, 0(s0)
 	la	a2, breakable
 	jal	displayPrint
 	j	continueRW
-
 renderCollectible:
 	# there are some other reasons like updating animated positions
 	# the function above does almost the same thing, the one below even more so
@@ -1614,7 +1618,6 @@ renderCollectible:
 	mul	a3, t1, t2
 	jal	displayPrint
 	j	continueRW
-
 renderBreakableC:
 	li	t2, 4
 	sb	t2, 0(s0)
@@ -1624,7 +1627,6 @@ renderBreakableC:
 	mul	a3, t1, t2
 	jal	displayPrint
 	j	continueRW
-	
 renderEnemy:
 	# the intricate process of enemy rendition is explained in the article
 	# needs to use t0 and t1 to find out ID of the enemy in this position and render according to state and type
@@ -1678,17 +1680,14 @@ enemyFound:
 	beq	s3, t0, renderTonho
 	# if somehow an enemy doesn't match any known enemy type, replace with an empty cell (to be replaced with missing texture)
 	j	renderEmpty
-	
 renderDudu:
 	la	a2, enemy_dudu
 	jal	displayPrint
 	j	continueRW
-
 renderTonho:
 	la	a2, enemy_tonho
 	jal	displayPrint
 	j	continueRW
-
 renderPlayer:
 	# render selector using states and the spritesheet
 	li	a3, 256
@@ -1702,8 +1701,6 @@ noPlayerBreak:
 	la	a2, char
 	jal	displayPrint
 	j	continueRW
-
-
 	# The rendering functions below call cell updates when necessary
 renderBuilding:
 	lw	t0, playerEnergy
@@ -1718,7 +1715,6 @@ renderBuilding1:
 	la	a2, building0
 	jal	displayPrint
 	j	continueRW
-
 renderBreaking:
 	lw	t0, playerEnergy
 	lw	t1, maxPlayerEnergy
@@ -1732,7 +1728,6 @@ renderBreaking1:
 	la	a2, breaking0
 	jal	displayPrint
 	j	continueRW
-
 continueRW:
 	# recover tempwidth and height from memory
 	lw	t0, tempwidth
@@ -1742,15 +1737,11 @@ continueRW:
 	# data pointer goes to adjacent matrix object
 	addi	s0, s0, 1
 	j	renderWidthLoop
-	
 renderWidthEnd:
 	# increment tempheight by one
 	addi	t1, t1, 1
 	j	renderHeightLoop
-	
 mapRenderEnd:
-
-
 	la	t0, explosionFlag
 	bne	t0, zero, explosionMatrixRender
 	j	outFinishExplosions
@@ -1784,7 +1775,6 @@ EMRx:
 	# explosion render selector
 	# should only render where the explosion matrix has a 1
 	beq	t3, zero, outRenderExplosion
-
 renderExplosion:
 	li	t0, 256
 	lw	t1, explosionState
@@ -1796,7 +1786,10 @@ renderExplosion:
 	lb	t3, 0(s3)
 	
 	li	t4, 9
-	beq	t3, t4, gameOver
+	bne	t3, t4, noExplosionGameOver
+	li	t4, 1
+	sw	t4, gameOverFlag, t5
+noExplosionGameOver:
 	li	t4, 2
 	beq	t3, t4, breakBreakable
 	li	t4, 4
@@ -1813,7 +1806,6 @@ outRenderExplosion:
 
 	lw	t0, tempwidth
 	lw	t1, tempheight
-	
 continueEMRx:
 	
 	# increment pointers and counters
@@ -1824,16 +1816,13 @@ continueEMRx:
 outEMRx:
 	addi	t1, t1, 1
 	j	EMRy
-
 outEMR:	
-	
 	lw	t0, explosionState
 	addi	t0, t0, 1
 	sw	t0, explosionState, t1
 	li	t1, 6
 	bge	t0, t1, finishExplosions
 	j	outFinishExplosions
-	
 finishExplosions:
 	# reset blow up states
 	# reset explosionMatrix
@@ -1867,12 +1856,14 @@ enemyExpStateReset:
 	j	enemyExpStateReset
 
 outFinishExplosions:
-
 	jal	frameSwitch
 	
 	# check for victory
 	lw	t0, victoryFlag
 	bne	t0, zero, victoryScreen
+	# check for gameOver
+	lw	t0, gameOverFlag
+	bne	t0, zero, gameOver
 	
 	# define tick period (equation: sleep + gameloop runtime = 50ms)
 	# example: if the gameloop takes ~10ms to run, the sleep call below should use 40ms
@@ -1882,10 +1873,15 @@ outFinishExplosions:
 	li	a7, 32
 	li	a0, 44
 	ecall
-
-continueLoop: j runtimeLoop
-
+	j runtimeLoop
 gameOver:
+	# initial sfx
+	li	a0, 50
+	li	a1, 1000
+	li	a2, 60 
+	li	a3, 100 
+	li	a7, 31 
+	ecall
 	
 	# renders a red effect on the screen for one second when the game is over
 	mv	a0, zero
@@ -1899,6 +1895,32 @@ gameOver:
 	li	a7, 32
 	ecall
 	
+	# sfx selector
+	lw	t0, gameOverFlag
+	li	t1, 1
+	beq	t0, t1, gameOverEnemy
+	li	t1, 2
+	beq	t0, t1, gameOverTimer
+	j	continueGameOver
+gameOverEnemy:
+	li	a0, 45
+	li	a1, 1500 
+	li	a2, 60 
+	li	a3, 100 
+	li	a7, 31 
+	ecall
+	j	continueGameOver
+gameOverTimer:
+	li	a0, 49
+	li	a1, 1500
+	li	a2, 21
+	li	a3, 100
+	li	a7, 31 
+	ecall
+continueGameOver:
+	# reset flag
+	li	t0, 0
+	sw	t0, gameOverFlag, t1
 	# render the gameover screen
 	mv	a0, zero
 	mv	a1, zero
@@ -1906,7 +1928,6 @@ gameOver:
 	mv	a3, zero
 	jal	displayPrint
 	jal	frameSwitch
-	
 overInput:
 	# wait for input to restart.
 	lw	t0, keyboardAddress
@@ -1917,9 +1938,36 @@ overInput:
 	li	t2, 0x072
 	beq	t1, t2, dynamicLoader
 	j	overInput
-
 victoryScreen:
-
+	# sfx
+	li	a0, 70
+	li	a1, 800
+	li	a2, 9
+	li	a3, 800
+	li	a7, 31 
+	ecall
+	li	a0, 200
+	li	a7, 32
+	ecall
+	li	a0, 80
+	li	a1, 800
+	li	a2, 9
+	li	a3, 800
+	li	a7, 31 
+	ecall
+	li	a0, 200
+	li	a7, 32
+	ecall
+	li	a0, 90
+	li	a1, 800
+	li	a2, 9
+	li	a3, 800
+	li	a7, 31 
+	ecall
+	li	a0, 500
+	li	a7, 32
+	ecall
+	
 	# below are carbon copies of menuRender and renderBackground functions
 	# necessary because they're not callable (calling functions recursively requires using the stack and we have no clue how)
 	# would've been cool if we learned. Maybe if the professor hadn't lost 6 of his classes to holidays on Thursdays this semester.
@@ -1929,6 +1977,7 @@ victoryScreen:
 	mv	a0, zero
 	mv	a1, zero
 	la	a2, levelBackground
+	li	a3, 0
 	jal	displayPrint
 	
 	# I once again deeply apologize for how unelegant the following code is.
@@ -2055,7 +2104,6 @@ noUnlocks:
 	sw	t0, levelNumber, t1
 	
 	j	dynamicLoader
-
 frameSwitch:
 	# frameswitch algorithm
 	# the way rendering works in this game is that the opposite frame is rendered while the current frame
@@ -2077,7 +2125,6 @@ frameSwitch:
 	xori	t2, t2, 1
 	sw	t2, 0(t1)
 	ret
-
 displayPrint:
 	# basic renderer function
 	# utilizes only temporaries
@@ -2154,7 +2201,6 @@ displayPrintEnd:
 	# reset a3 for safety purposes (it is only used by display print and is never reset anywhere)
 	mv	a3, zero
 	ret
-	
 exitProgram:
 	# exitProgram was placed way down here to prevent drops
 	li	a7, 10
