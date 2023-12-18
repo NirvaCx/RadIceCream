@@ -726,7 +726,8 @@ outResetPlayerBreaking:
 
 	# enemy ai for movement should be run every 0.8s (16 ticks)
 	# enemy ai should never be run at the very start of the match
-	beq	s11, zero, outEnemyAI
+	li	t3, 16
+	blt	s11, t3, outEnemyAI
 	li	t0, 0
 	# t0 will hold the current enemy ID
 	li	t3, 16
