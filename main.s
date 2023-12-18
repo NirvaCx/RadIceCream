@@ -53,19 +53,16 @@ unlockedLevels:
 .include "level_information/level_1/level1_bg.data"
 .include "level_information/level_1/level1_info.data"
 .include "level_information/level_1/level1_colupdates.data"
-.include "level_information/level_1/level1_music.data"
 
 .include "level_information/level_2/level2.data"
 .include "level_information/level_2/level2_bg.data"
 .include "level_information/level_2/level2_info.data"
 .include "level_information/level_2/level2_colupdates.data"
-.include "level_information/level_2/level2_music.data"
 
 .include "level_information/level_3/level3.data"
 .include "level_information/level_3/level3_bg.data"
 .include "level_information/level_3/level3_info.data"
 .include "level_information/level_3/level3_colupdates.data"
-.include "level_information/level_3/level3_music.data"
 
 .include "sprites/empty.data"
 .include "sprites/breakable.data"
@@ -125,17 +122,17 @@ currentCollectible:
 levelNumber:
 .word	0
 
-##################
-##	Music info	##
-##################
+# Music info
+currentSongID:
+.word	0 #
 songLength:
 .word 	0
 
 # songNotes and notesDuration work in pairs, so they use the same pointer (currentNote)
 songNotes: # array that contains the pitch value of each note
-.space	2048
+.byte 	0
 notesDuration: # array that contains the duration of each note
-.space	2048
+.byte 	0
 
 currentNote: # pointer to the current note (and its duration)
 .word 	0
@@ -334,7 +331,6 @@ load1:
 	la	a1, level1_bg
 	la	a2, level1_info
 	la	a3, level1_colupdates
-	la	a4, level1_music
 	j	levelLoader
 
 load2:
@@ -349,7 +345,6 @@ load2:
 	la	a1, level2_bg
 	la	a2, level2_info
 	la	a3, level2_colupdates
-	la	a4, level2_music
 	j	levelLoader
 
 load3:
@@ -364,7 +359,6 @@ load3:
 	la	a1, level3_bg
 	la	a2, level3_info
 	la	a3, level3_colupdates
-	la	a4, level3_music
 	j	levelLoader
 	
 dynamicLoader:
@@ -384,7 +378,7 @@ levelLoader:
 	# a1 = level background image
 	# a2 = level information file
 	# a3 = level collectible update matrix
-	# a4 = level music length, notes and durations
+	
 	
 	# reset collectible values
 	li	t0, 100
@@ -638,71 +632,8 @@ outICM:
 	lw	s1, 0(s0)
 	sw	s1, currentCollectible, s0
 	
-loadMusic:	# setting up songLength, songNotes, notesDuration
-	lw	s0,	0(a4)	# getting music length
-	sw	s0,	songLength, t0
-	
-	addi	a4, a4, 4	# moving a4 to song note
-	getNotes:
-	
-	
-	
 runtimeLoop:
-
-musicRunner:	# Play the music
-
-	lw	t0, currentNote	# start address == 0
-	beqz t0, playNote	# Song just started, skip endNoteChecker
-
-	#	Checks if note is over playing:
-	endNoteChecker:
-		li	a7, 30
-		ecall	# a0 holds current time
-		lw	t5, currentEndTime	# (refurbishing t5 here) t5 holds currentEndTime
-		blt a0, t5, notOverYet	# checks if current time is less than the previously set end time.
-		noteIsOver:					# If not, the note is over playing.
-			lw	s0, currentNote	# s0 acts like a current note counter
-			addi	s0, s0, 1	# increment counter
-			bgt	s0, t4, loopSong# if song ended, loop it
-			j	outLoopSong
-			loopSong:
-			li	s0, 0	# reset counter
-			outLoopSong:
-			sw	s0, currentNote, s1	# set new pointer value to memory	
-	playNote:
-		#	Get memory info
-		lw	t4, songLength		# load song length in notes
-		lw	t0, currentNote		# load pointer
-		lw	t1, songNotes		# Load notes array into t1
-		lw	t2, notesDuration	# Load durations array into t2
-		li	t3, 4
-		mul	t0, t0, t3
-		
-		#	Set up pointers
-		add	t1, t1, t0	# t1 holds the current pitch's address
-		lw	t1, 0(t1)	# t1 is now the current note
-		add	t2, t2, t0 	# t2 holds the current duration's address
-		lw	t2, 0(t2) 	# t2 is now the current duration
-		lw	t5, 0(t2) 	# copying the duration to generate end time
 	
-		#	Midi Output
-		li	a7, 31 	# MidiOut syscall
-		mv	a0, t1 	# move pitch from t1 to a0
-		mv	a1, t2 	# move duration from t2 to a1
-		li	a2, 30 	# guitar instrument
-		li	a3, 50 	# volume
-		ecall
-		
-		# Get current time
-		li	a7, 30
-		ecall
-		
-		# Setting up end time for the current note being played
-		add	t6, a0, t5 # t6 is startTime + duration
-		sw 	t6, currentEndTime, s2
-		
-	notOverYet:		
-
 gameLoop:
 	
 	# level pauser

@@ -1,14 +1,14 @@
-Open the game by running (double-clicking) RadIceCream.bat
+Open the game by running BadIceCream.bat
 
 Use the numbers on the top row of your keyboard to navigate the menus
 
-## Note: All controls are lowercase.
 Ingame:
 W, A, S and D to move
 [Space] to perform special
 [P] to pause the game
 
-## Cheats:
+Cheats:
+
 Level Select:
 [0] - Unlock All Levels
 [-] - Reset Progression
