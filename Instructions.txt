@@ -1,0 +1,18 @@
+Open the game by running BadIceCream.bat
+
+Use the numbers on the top row of your keyboard to navigate the menus
+
+Ingame:
+W, A, S and D to move
+[Space] to perform special
+[P] to pause the game
+
+Cheats:
+
+Level Select:
+[0] - Unlock All Levels
+[-] - Reset Progression
+
+Ingame:
+[0] - Instantly Win
+[-] - Instantly Lose

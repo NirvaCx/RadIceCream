@@ -138,3 +138,4 @@ Changes since v9:
 
 0.5.1a - 18/12/2023
 - Added many, many sound effects.
+- Added instructions in game's directory
