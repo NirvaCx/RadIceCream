@@ -57,16 +57,19 @@ unlockedLevels:
 .include "level_information/level_1/level1_bg.data"
 .include "level_information/level_1/level1_info.data"
 .include "level_information/level_1/level1_colupdates.data"
+.include "level_information/level_1/level1_music.data"
 
 .include "level_information/level_2/level2.data"
 .include "level_information/level_2/level2_bg.data"
 .include "level_information/level_2/level2_info.data"
 .include "level_information/level_2/level2_colupdates.data"
+.include "level_information/level_1/level3_music.data"
 
 .include "level_information/level_3/level3.data"
 .include "level_information/level_3/level3_bg.data"
 .include "level_information/level_3/level3_info.data"
 .include "level_information/level_3/level3_colupdates.data"
+.include "level_information/level_1/level3_music.data"
 
 .include "sprites/empty.data"
 .include "sprites/breakable.data"
@@ -140,6 +143,8 @@ notesDuration: # array that contains the duration of each note
 
 currentNote: # pointer to the current note (and its duration)
 .word 	0
+currentEndTime: # when last note ends
+.word	0
 
 explosionMatrix:
 .space	300
@@ -207,6 +212,8 @@ lookAheadPointer:
 levelTimer:
 .word	0
 levelPaused:
+.word	0
+currentTime:
 .word	0
 
 # game flags
@@ -719,9 +726,76 @@ outICM:
 	lw	s1, 0(s0)
 	sw	s1, currentCollectible, s0
 	
-runtimeLoop:
+	# init currentTime
+	li	a7, 30
+	ecall
+	sw	a0, currentTime, t0
 	
+runtimeLoop:
+
+musicRunner:
+	# Play the music  
+	lw	t0, currentNote	# start value == 0
+	beqz t0, playNote	# Song just started, skip endNoteChecker
+
+	#	Checks if note is over playing:
+	endNoteChecker:
+	li	a7, 30
+	ecall	# a0 holds current time
+	lw	t5, currentEndTime	# (refurbishing t5 here) t5 holds currentEndTime
+	blt a0, t5, notOverYet				# checks if current time is less than the previously set end time.
+	playNote:
+	#	Get memory info
+	lw	t4, songLength		# load song length in notes
+	lw	t0, currentNote		# load pointer
+	la	t1, songNotes		# Load notes array address into t1
+	la	t2, notesDuration	# Load durations array address into t2
+	li	t3, 4
+	mul	t0, t0, t3
+
+	#	Set up pointers
+	add	t1, t1, t0	# t1 holds the current pitch's address
+	lw	t1, 0(t1)	# t1 is now the current note
+	add	t2, t2, t0 	# t2 holds the current duration's address
+	lw	t2, 0(t2) 	# t2 is now the current duration
+
+	#	Midi Output
+	li	a7, 31 	# MidiOut syscall
+	mv	a0, t1 	# move pitch from t1 to a0
+	mv	a1, t2 	# move duration from t2 to a1
+	li	a2, 30 	# guitar instrument
+	li	a3, 50 	# volume
+	ecall
+
+	# Get current time
+	li	a7, 30
+	ecall
+	
+	# Setting up end time for the current note being played
+	add	t6, a0, t2 # t6 is startTime + duration
+	sw 	t6, currentEndTime, s2
+	
+	lw	s0, currentNote		# s0 acts like a current note counter
+	addi	s0, s0, 1		# increment counter
+	bge	s0, t4, loopSong	# if song ended, loop it
+	j	outLoopSong
+loopSong:
+	li	s0, 0			# reset counter
+outLoopSong:
+	sw	s0, currentNote, s1	# set new pointer value to memory
+		
+notOverYet:
+	
+	# check if it's time to run the next game tick
+	lw	t0, currentTime
+	addi	t0, t0, 50
+	li	a7, 30
+	ecall
+	blt	a0, t0, runtimeLoop
 gameLoop:
+	li	a7, 30
+	ecall
+	sw	a0, currentTime, t0
 	
 	# level pauser
 	lw	t0, levelPaused
@@ -1952,14 +2026,8 @@ outFinishExplosions:
 	lw	t0, gameOverFlag
 	bne	t0, zero, gameOver
 	
-	# define tick period (equation: sleep + gameloop runtime = 50ms)
-	# example: if the gameloop takes ~10ms to run, the sleep call below should use 40ms
-	
 	addi	s11, s11, 1
 	
-	li	a7, 32
-	li	a0, 44
-	ecall
 	j runtimeLoop
 gameOver:
 	# initial sfx
