@@ -3,7 +3,13 @@ RISC-V Assembly project for Introduction to Computer Systems class at University
 Created by Nirva Neves, Rodrigo Rafik and Mariana Simion<br>
 Inspired by BadIceCream by Nitrome<br>
 
-## How to run
+## How to run (Latest Versions)
+Open terminal from the game directory and type in the following:
+```
+./fpgrars-x86_64-pc-windows-gnu.exe main.s
+```
+
+## How to run (Versions Prior to 1.1.0)
 Open terminal from the game directory and type in the following:
 ```
 ./fpgrars-x86_64-pc-windows-msvc--unb.exe main.s
