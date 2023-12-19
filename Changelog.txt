@@ -1,122 +1,17 @@
-v0:
-- initial framework
-- contains only the matrix-render interface and the renderer itself
+1.0.0  - 19/12/2023
+- Initial release
+- Added the story screens
+- Added an important readme for project judges
+- Inverted the changelog
 
-v1:
-- introduced the clock and frame updates
+0.5.1a - 18/12/2023
+- Added many, many sound effects.
+- Added instructions in game's directory
 
-v2:
-
-- introduced the player, collectibles, reorganized functions and code
-- introduced movement
-
-v3:
-
-- slight code simplification
-- better documentation
-
-v4: - 25/11/2023
-
-- new sprites and infrastructure for sprite creation is now (temporarily, most likely) inside the project within separate folders.
-- player movement now also changes the direction the player's sprite is facing
-
-v5: - 25/11/2023
-
-- reworked sprite and render system to allow for spritesheets
-- playerstates are extremely modular as a result of the change above, and code was dramatically simplified
-- condensed char sprites into "char.data"
-
-v6: - 27/11/2023
-
-- overhauled level loading system to allow for multiple levels.
-
-v7: - 28/11/2023
-
-- slight updates to level loading system
-- tickrate system overhaul
-- new movement system based on recharging "stamina" (not visible to the player but affects movement)
-- fixed strange visual flickering when performing special (spacebar)
-- reorganized some sprites into spritesheets for later use
-- documentation updated
-
-v8 - 29/11/2023
-
-- modularized stamina system (now, changing max stamina only requires changing the constant in memory)
-- introduced basic player special functionality - breaking and building blocks (no animation)
-
-v9 - 30/11/2023
-
-- minor artstyle changes
-- minor maprender code changes for futureproofing
-- introduced breaking and building animations for blocks (dependant on playerEnergy)
-
-0.1.0a - 30/11/2023
-
-- "Alpha" phase - most features already introduced and only need polishing
-- will be out of alpha once enemies are ready
-Changes since v9:
-- reworked EnemyStates for futureproofing
-- many level loader changes according to new and future features
-- removed leftover document file
-- introduced a primitive, unfinished menu system - mainly for debugging
-- preparations for introducing multiple collectibles per level
-- side menu now renders timer and score, as well as current level
-- introduced the timer mechanic, that causes a gameover once it reaches zero.
-
-0.2.0a - 30/11/2023 (warning: glitchy)
-
-- mostly art changes 
-- level 3 (final boss) artwork, background and matrix 
-- updated main menu screen artwork
-- added gameover screen and pause menu artwork
-- multiple collectible per-level matrices created in preparation for collectibleUpdate changes
-- added the frozen version of every item and also collectible no. 4 - spicy pepper
-
-0.2.1a - 01/12/2023 
-
-- multiple fixes and implementations of 0.2 art
-- implemented basic main menu (still has old functionality - press number for level)
-- implemented pause menu (number select screen, functional)
-- implemented restarter function that doubles as a level passer
-- collecting all collectibles now triggers the placeholder victory screen and sends you to the next level
-- victory screen lasts 2.5s
-
-0.3.0a - 02/12/2023
-
-- completely reworked collectible system
-- introduced level 3
-- introduced collectible updates for all levels
-- slight recommenting
-- reworked victory system - now requires you to pass through all collectible types in that level
-- new level unlocking system; only level 1 starts unlocked (press 0 to unlock all levels)
-- levels now have their own timers (3 minutes for levels 1 and 2 and 5 minutes for level 3)
-- taking too long now reduces the amount of points you get (30 less points per collectible at 2 minutes remaining and another 30 point deduction at 1 minute remaining)
-- enormous changes to levelLoader
-- slight victory screen rework, still WIP (now doesn't affect side menu so one can see their score and time)
-- victory is now defined by a flag that gets checked at the end of every tick rather than a jump
-- many, many fixes.
-
-0.3.1a - 02/12/2023
-
-- introduced proper enemy rendering system (now renders according to type and state)
-- small fixes to level information files and level 3's hitboxes
-- the player must now face a direction before they may move in it. This significantly improves controlability
-
-0.3.2a - 04/12/2023
-
-- modularized the collectible value decrement, which is now level-dependent.
-- overhauled code comments and documentation (long overdue this one)
-- reorganized parts of the code
-- tick counter register is no longer capped at all (previously capped at 200)
-- added a placeholder level select menu to fix the painfully misleading main menu options
-- a BUNCH of small fixes
-
-0.4.0a - 05/12/2023
-
-- Introduced enemy movement AI, decided it won't be deterministic
-- changes to level 1's layout
-- small fix to level 3's hitboxes
-- fixed background render not providing offset argument to displayPrint (makes sound effects possible)
+0.5.0a - 17/12/2023
+- Game now has an executable
+- Added a placeholder testing sound effect
+- Enemy 2 "tonho" now explodes lines and columns. If caught in the explosion, the player dies.
 
 0.4.1a - 06/12/2023
 - Small art changes;
@@ -131,11 +26,107 @@ Changes since v9:
 	+ Lock levels (Press [-] in level select)
 - Added project archive to github readme
 
-0.5.0a - 17/12/2023
-- Game now has an executable
-- Added a placeholder testing sound effect
-- Enemy 2 "tonho" now explodes lines and columns. If caught in the explosion, the player dies.
+0.4.0a - 05/12/2023
+- Introduced enemy movement AI, decided it won't be deterministic
+- changes to level 1's layout
+- small fix to level 3's hitboxes
+- fixed background render not providing offset argument to displayPrint (makes sound effects possible)
 
-0.5.1a - 18/12/2023
-- Added many, many sound effects.
-- Added instructions in game's directory
+0.3.2a - 04/12/2023
+- modularized the collectible value decrement, which is now level-dependent.
+- overhauled code comments and documentation (long overdue this one)
+- reorganized parts of the code
+- tick counter register is no longer capped at all (previously capped at 200)
+- added a placeholder level select menu to fix the painfully misleading main menu options
+- a BUNCH of small fixes
+
+0.3.1a - 02/12/2023
+- introduced proper enemy rendering system (now renders according to type and state)
+- small fixes to level information files and level 3's hitboxes
+- the player must now face a direction before they may move in it. This significantly improves controlability
+
+0.3.0a - 02/12/2023
+- completely reworked collectible system
+- introduced level 3
+- introduced collectible updates for all levels
+- slight recommenting
+- reworked victory system - now requires you to pass through all collectible types in that level
+- new level unlocking system; only level 1 starts unlocked (press 0 to unlock all levels)
+- levels now have their own timers (3 minutes for levels 1 and 2 and 5 minutes for level 3)
+- taking too long now reduces the amount of points you get (30 less points per collectible at 2 minutes remaining and another 30 point deduction at 1 minute remaining)
+- enormous changes to levelLoader
+- slight victory screen rework, still WIP (now doesn't affect side menu so one can see their score and time)
+- victory is now defined by a flag that gets checked at the end of every tick rather than a jump
+- many, many fixes.
+
+0.2.1a - 01/12/2023 
+- multiple fixes and implementations of 0.2 art
+- implemented basic main menu (still has old functionality - press number for level)
+- implemented pause menu (number select screen, functional)
+- implemented restarter function that doubles as a level passer
+- collecting all collectibles now triggers the placeholder victory screen and sends you to the next level
+- victory screen lasts 2.5s
+
+0.2.0a - 30/11/2023 (warning: glitchy)
+- mostly art changes 
+- level 3 (final boss) artwork, background and matrix 
+- updated main menu screen artwork
+- added gameover screen and pause menu artwork
+- multiple collectible per-level matrices created in preparation for collectibleUpdate changes
+- added the frozen version of every item and also collectible no. 4 - spicy pepper
+
+0.1.0a - 30/11/2023
+- "Alpha" phase - most features already introduced and only need polishing
+- will be out of alpha once enemies are ready (Note from the future: in retrospect this was a slight lie)
+Changes since v9:
+- reworked EnemyStates for futureproofing
+- many level loader changes according to new and future features
+- removed leftover document file
+- introduced a primitive, unfinished menu system - mainly for debugging
+- preparations for introducing multiple collectibles per level
+- side menu now renders timer and score, as well as current level
+- introduced the timer mechanic, that causes a gameover once it reaches zero.
+
+v9 - 30/11/2023
+- minor artstyle changes
+- minor maprender code changes for futureproofing
+- introduced breaking and building animations for blocks (dependant on playerEnergy)
+
+v8 - 29/11/2023
+- modularized stamina system (now, changing max stamina only requires changing the constant in memory)
+- introduced basic player special functionality - breaking and building blocks (no animation)
+
+v7: - 28/11/2023
+- slight updates to level loading system
+- tickrate system overhaul
+- new movement system based on recharging "stamina" (not visible to the player but affects movement)
+- fixed strange visual flickering when performing special (spacebar)
+- reorganized some sprites into spritesheets for later use
+- documentation updated
+
+v6: - 27/11/2023
+- overhauled level loading system to allow for multiple levels.
+
+v5: - 25/11/2023
+- reworked sprite and render system to allow for spritesheets
+- playerstates are extremely modular as a result of the change above, and code was dramatically simplified
+- condensed char sprites into "char.data"
+
+v4: - 25/11/2023
+- new sprites and infrastructure for sprite creation is now (temporarily, most likely) inside the project within separate folders.
+- player movement now also changes the direction the player's sprite is facing
+
+v3:
+- slight code simplification
+- better documentation
+
+v2:
+- introduced the player, collectibles, reorganized functions and code
+- introduced movement
+
+v1:
+- introduced the clock and frame updates
+
+v0:
+- initial framework
+- contains only the matrix-render interface and the renderer itself

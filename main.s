@@ -47,6 +47,10 @@ unlockedLevels:
 .include "level_information/menu_screens/death_overlay.data"
 .include "level_information/menu_screens/gameover.data"
 .include "level_information/menu_screens/victoryscreen.data"
+.include "level_information/menu_screens/storyscreen1.data"
+.include "level_information/menu_screens/storyscreen2.data"
+.include "level_information/menu_screens/victory_screen_final0.data"
+.include "level_information/menu_screens/victory_screen_final1.data"
 .include "sprites/numbers.data"
 
 .include "level_information/level_1/level1.data"
@@ -228,11 +232,10 @@ mainMenuRender:
 	mv	a0, zero
 	mv	a1, zero
 	la	a2, title_screen
+	li	a3, 0
 	jal	displayPrint
 	jal	frameSwitch
-
 mainMenuSelect:
-	
 	# get input from the keyboard for menu options
 	lw	t0, keyboardAddress
 	lw	t1, 0(t0)
@@ -242,20 +245,60 @@ mainMenuSelect:
 	lb	t1, 4(t0)
 	
 	li	t2, 0x031
-	beq	t1, t2, levelSelect
+	beq	t1, t2, storyScreen
 	li	t2, 0x032
 	# this slight madness below has to be done because exitProgram is out of the branch's range (+- 512 words)
 	bne	t1, t2, continueMMSelect
 	j	exitProgram
 continueMMSelect:
-	
 	j	mainMenuSelect
+storyScreen:
+	# render story part 1
+	mv	a0, zero
+	mv	a1, zero
+	la	a2, storyscreen1
+	li	a3, 0
+	jal	displayPrint
+	jal	frameSwitch
+
+storyPrompt1:	
+	# get input from the keyboard
+	lw	t0, keyboardAddress
+	lw	t1, 0(t0)
+	andi	t1, t1, 1
+	# check first bit at keyboard address to see if input has been pressed
+	beq	t1, zero, storyPrompt1
+	lb	t1, 4(t0)
+	# next part if input is 1
+	li	t2, 0x031
+	bne	t1, t2, storyPrompt1
+	
+	# render story part 2
+	mv	a0, zero
+	mv	a1, zero
+	la	a2, storyscreen2
+	li	a3, 0
+	jal	displayPrint
+	jal	frameSwitch
+
+storyPrompt2:	
+	# get input from the keyboard
+	lw	t0, keyboardAddress
+	lw	t1, 0(t0)
+	andi	t1, t1, 1
+	# check first bit at keyboard address to see if input has been pressed
+	beq	t1, zero, storyPrompt2
+	lb	t1, 4(t0)
+	# level Select if input is 1
+	li	t2, 0x031
+	bne	t1, t2, storyPrompt2
 	
 levelSelect:
 	# render level select screen
 	mv	a0, zero
 	mv	a1, zero
 	la	a2, level_select
+	li	a3, 0
 	jal	displayPrint
 	
 	# padlocks rendering
@@ -360,6 +403,48 @@ load3:
 	la	a2, level3_info
 	la	a3, level3_colupdates
 	j	levelLoader
+
+finalVictoryScreen:
+	# render vicstory part 1
+	mv	a0, zero
+	mv	a1, zero
+	la	a2, victory_screen_final0
+	li	a3, 0
+	jal	displayPrint
+	jal	frameSwitch
+
+victoryPrompt1:	
+	# get input from the keyboard
+	lw	t0, keyboardAddress
+	lw	t1, 0(t0)
+	andi	t1, t1, 1
+	# check first bit at keyboard address to see if input has been pressed
+	beq	t1, zero, victoryPrompt1
+	lb	t1, 4(t0)
+	# next part if input is 1
+	li	t2, 0x031
+	bne	t1, t2, victoryPrompt1
+	
+	# render vicstory part 2
+	mv	a0, zero
+	mv	a1, zero
+	la	a2, victory_screen_final1
+	li	a3, 0
+	jal	displayPrint
+	jal	frameSwitch
+
+victoryPrompt2:	
+	# get input from the keyboard
+	lw	t0, keyboardAddress
+	lw	t1, 0(t0)
+	andi	t1, t1, 1
+	# check first bit at keyboard address to see if input has been pressed
+	beq	t1, zero, victoryPrompt2
+	lb	t1, 4(t0)
+	# level Select if input is 1
+	li	t2, 0x031
+	bne	t1, t2, victoryPrompt2	
+	j	mainMenuRender
 	
 dynamicLoader:
 	# loads a level based on the current levelNumber
@@ -371,6 +456,8 @@ dynamicLoader:
 	beq	t0, t1, load2
 	li	t1, 3
 	beq	t0, t1, load3
+	li	t1, 4
+	beq	t0, t1, finalVictoryScreen
 	j	mainMenuRender
 
 levelLoader:

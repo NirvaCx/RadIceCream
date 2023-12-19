@@ -1,0 +1,18 @@
+It turns out the game's implementation has been severely limited due to a bug in FPGRARS
+To put it simply, FPGRARS apparently crashes if one makes too many system calls.
+
+That bug is better described in the GitHub issue below, with some example code that triggers it
+
+https://github.com/LeoRiether/FPGRARS/issues/45
+
+The game is able to run for approximately 6 minutes before crashing - likely due to the intensive use of the
+sleep [32] system call for tickrate control. This bug also made using the time system call for controlling the
+tickrate impractical, as the game would crash near instantly.
+
+TL;DR the game isn't crashing after 6 minutes because of a fault in the code, but because of a fault in the
+simulator
+
+It should also be noted that the game simply does not run in regular RARS as
+1 - it's slow (words can't describe how slow it is)
+2 - it doesn't like unaligned memory and we couldn't bother aligning everything
+3 - it's buggy - some snippets of code simply don't run for absolutely no reason
