@@ -1,4 +1,5 @@
 1.1.0  - 19/12/2023
+- Fixed FPGRARS overflow crash by changing FPGRARS version
 - Added music to the levels
 - level 3's music is still a placeholder
 - tickrate rework, shouldn't be noticeable
