@@ -63,13 +63,13 @@ unlockedLevels:
 .include "level_information/level_2/level2_bg.data"
 .include "level_information/level_2/level2_info.data"
 .include "level_information/level_2/level2_colupdates.data"
-.include "level_information/level_1/level3_music.data"
+.include "level_information/level_2/level2_music.data"
 
 .include "level_information/level_3/level3.data"
 .include "level_information/level_3/level3_bg.data"
 .include "level_information/level_3/level3_info.data"
 .include "level_information/level_3/level3_colupdates.data"
-.include "level_information/level_1/level3_music.data"
+.include "level_information/level_3/level3_music.data"
 
 .include "sprites/empty.data"
 .include "sprites/breakable.data"
@@ -81,10 +81,6 @@ unlockedLevels:
 .include "sprites/building0.data"
 .include "sprites/breaking0.data"
 .include "sprites/explosion.data"
-
-#########################
-### ingame variables  ###
-#########################
 
 # levelLoader data
 currentLevel:
@@ -129,34 +125,26 @@ currentCollectible:
 levelNumber:
 .word	0
 
-# Music info
-currentSongID:
-.word	0 #
+# song data
 songLength:
 .word 	0
-
 # songNotes and notesDuration work in pairs, so they use the same pointer (currentNote)
 songNotes: # array that contains the pitch value of each note
-.byte 	0
+.space	4096
 notesDuration: # array that contains the duration of each note
-.byte 	0
-
+.space	4096
 currentNote: # pointer to the current note (and its duration)
 .word 	0
 currentEndTime: # when last note ends
 .word	0
 
+# explosion variables
 explosionMatrix:
 .space	300
 explosionFlag:
 .word	0
 explosionState:
 .word	0
-
-
-########################
-### player variables ###
-########################
 
 # states up, down, left and right are 0, 1, 2 and 3 respectively
 playerState:
@@ -184,10 +172,6 @@ collectibleValue:
 points:
 .word	0
 
-######################
-### MMIO variables ###
-######################
-
 # frameswitch variables
 currentframeaddress:
 .word	0xff100000
@@ -199,10 +183,6 @@ currentInput:
 .word	0x0
 keyboardAddress:
 .word	0xff200000
-
-#######################
-### Other variables ###
-#######################
 
 # used by doSpecial
 lookAheadPointer:
@@ -234,6 +214,8 @@ tempheight:
 
 .text
 
+# MAIN MENU
+
 mainMenuRender:
 	# render title screen
 	mv	a0, zero
@@ -259,6 +241,9 @@ mainMenuSelect:
 	j	exitProgram
 continueMMSelect:
 	j	mainMenuSelect
+	
+# STORY SCREEN
+	
 storyScreen:
 	# render story part 1
 	mv	a0, zero
@@ -287,7 +272,6 @@ storyPrompt1:
 	li	a3, 0
 	jal	displayPrint
 	jal	frameSwitch
-
 storyPrompt2:	
 	# get input from the keyboard
 	lw	t0, keyboardAddress
@@ -299,7 +283,9 @@ storyPrompt2:
 	# level Select if input is 1
 	li	t2, 0x031
 	bne	t1, t2, storyPrompt2
-	
+
+# LEVEL SELECT
+
 levelSelect:
 	# render level select screen
 	mv	a0, zero
@@ -311,7 +297,6 @@ levelSelect:
 	# padlocks rendering
 	lw	s0, unlockedLevels
 	la	s1, padlockoverlay
-	
 padlock2:
 	li	t0, 2
 	bge	s0, t0, padlock3
@@ -328,11 +313,8 @@ padlock3:
 	mv	a2, s1
 	mv	a3, zero
 	jal	displayPrint
-	
 finishPadlocks:
-	
 	jal	frameSwitch
-	
 levelInput:
 	# get input from the keyboard numbers and loads the corresponding level.
 	lw	t0, keyboardAddress
@@ -361,19 +343,19 @@ levelInput:
 	li	t2, 0x70
 	beq	t1, t2, mainMenuRender
 	j	levelInput
-
 unlockLevels:
 	# unlock levels and go back to level prompt
 	li	t0, 9
 	sw	t0, unlockedLevels, t1
 	j	levelSelect
-
 lockLevels:
 	# lock levels and go back to level prompt
 	li	t0, 1
 	sw	t0, unlockedLevels, t1
 	j	levelSelect
-
+	
+# LEVEL LOADING
+	
 load1:
 	li	t0, 1
 	sw	t0, levelNumber, t1
@@ -381,6 +363,7 @@ load1:
 	la	a1, level1_bg
 	la	a2, level1_info
 	la	a3, level1_colupdates
+	la	a4, level1_music
 	j	levelLoader
 
 load2:
@@ -395,6 +378,7 @@ load2:
 	la	a1, level2_bg
 	la	a2, level2_info
 	la	a3, level2_colupdates
+	la	a4, level2_music
 	j	levelLoader
 
 load3:
@@ -409,7 +393,10 @@ load3:
 	la	a1, level3_bg
 	la	a2, level3_info
 	la	a3, level3_colupdates
+	la	a4, level3_music
 	j	levelLoader
+
+# ENDGAME STORY SCREEN
 
 finalVictoryScreen:
 	# render vicstory part 1
@@ -419,7 +406,6 @@ finalVictoryScreen:
 	li	a3, 0
 	jal	displayPrint
 	jal	frameSwitch
-
 victoryPrompt1:	
 	# get input from the keyboard
 	lw	t0, keyboardAddress
@@ -439,7 +425,6 @@ victoryPrompt1:
 	li	a3, 0
 	jal	displayPrint
 	jal	frameSwitch
-
 victoryPrompt2:	
 	# get input from the keyboard
 	lw	t0, keyboardAddress
@@ -452,7 +437,10 @@ victoryPrompt2:
 	li	t2, 0x031
 	bne	t1, t2, victoryPrompt2	
 	j	mainMenuRender
-	
+
+# DYNAMIC LEVEL SELECTOR
+# (Used for restarts and next levels)
+
 dynamicLoader:
 	# loads a level based on the current levelNumber
 	# useful for restarting and loading the next level after victory
@@ -467,12 +455,14 @@ dynamicLoader:
 	beq	t0, t1, finalVictoryScreen
 	j	mainMenuRender
 
+# LEVEL LOADER
+
 levelLoader:
 	# a0 = level matrix
 	# a1 = level background image
 	# a2 = level information file
 	# a3 = level collectible update matrix
-	
+	# a4 = level music information
 	
 	# reset collectible values
 	li	t0, 100
@@ -506,6 +496,9 @@ levelLoader:
 	# reset explosionFlag
 	li	t0, 0
 	sw	t0, explosionFlag, t1
+	# reset current note
+	li	t0, 0
+	sw	t0, currentNote, t1
 
 	# reset explosionMatrix
 	la	s0, explosionMatrix
@@ -721,30 +714,69 @@ outICMLoop:
 	j	initCollectibleMatrices
 outICM:
 
+loadMusic:
+	# music loading isn't much different from the other loader loops
+	lw	s0, 0(a4)
+	sw	s0, songLength, t0
+	addi	a4, a4, 4
+	
+	la	s2, songNotes
+	li	s1, 0
+loadNotes:
+	bge	s1, s0, outLoadNotes
+	lw	t0, 0(a4)
+	sw	t0, 0(s2)
+	
+	addi	a4, a4, 4
+	addi	s2, s2, 4
+	addi	s1, s1, 1
+	j	loadNotes
+outLoadNotes:
+	li	s1, 0
+	la	s2, notesDuration
+loadDurations:
+	bge	s1, s0, outLoadDurations
+	lw	t0, 0(a4)
+	sw	t0, 0(s2)
+	
+	addi	a4, a4, 4
+	addi	s2, s2, 4
+	addi	s1, s1, 1
+	j	loadDurations
+outLoadDurations:
+	
 	# init currentCollectible
 	la	s0, collectibleTypes
 	lw	s1, 0(s0)
 	sw	s1, currentCollectible, s0
 	
-	# init currentTime
+	# init currentTime and currentEndTime
 	li	a7, 30
 	ecall
 	sw	a0, currentTime, t0
+	sw	a0, currentEndTime, t0
 	
+	
+# MAIN INGAME LOOPS
+
+		
 runtimeLoop:
-
+	# This small sleep is necessary, otherwise some note don't play at all
+	# This is because runtimeLoop would run EXTREMELY fast without this sleep
+	li	a7, 32
+	li	a0, 1
+	ecall
+	
+# MUSIC
+	
 musicRunner:
-	# Play the music  
-	lw	t0, currentNote	# start value == 0
-	beqz t0, playNote	# Song just started, skip endNoteChecker
-
 	#	Checks if note is over playing:
-	endNoteChecker:
+endNoteChecker:
 	li	a7, 30
 	ecall	# a0 holds current time
 	lw	t5, currentEndTime	# (refurbishing t5 here) t5 holds currentEndTime
-	blt a0, t5, notOverYet				# checks if current time is less than the previously set end time.
-	playNote:
+	blt	a0, t5, notOverYet	# checks if current time is less than the previously set end time.
+playNote:
 	#	Get memory info
 	lw	t4, songLength		# load song length in notes
 	lw	t0, currentNote		# load pointer
@@ -764,7 +796,7 @@ musicRunner:
 	mv	a0, t1 	# move pitch from t1 to a0
 	mv	a1, t2 	# move duration from t2 to a1
 	li	a2, 30 	# guitar instrument
-	li	a3, 50 	# volume
+	li	a3, 100 	# volume
 	ecall
 
 	# Get current time
@@ -783,21 +815,30 @@ loopSong:
 	li	s0, 0			# reset counter
 outLoopSong:
 	sw	s0, currentNote, s1	# set new pointer value to memory
-		
 notOverYet:
-	
+
+# MAIN GAME LOOP
+
 	# check if it's time to run the next game tick
 	lw	t0, currentTime
-	addi	t0, t0, 50
+	# 44 miliseconds because time in the runtime simulator is weird
+	# The game runs at ~ 20 fps (it varies a little bit, sadly)
+	addi	t0, t0, 44
 	li	a7, 30
 	ecall
-	blt	a0, t0, runtimeLoop
+	bge	a0, t0, gameLoop
+	j	runtimeLoop
 gameLoop:
+	
+	# save the time at which this tick is being run
 	li	a7, 30
 	ecall
 	sw	a0, currentTime, t0
 	
-	# level pauser
+# INITIAL GAMELOOP PROCEDURES
+
+# LEVEL PAUSING
+
 	lw	t0, levelPaused
 	beq	t0, zero, outPauseLevel
 pauseLevel:
@@ -833,6 +874,8 @@ pauseInput:
 outPauseLevel:
 	# remove pause flag
 	sw	zero, levelPaused, t0
+	
+# TIMER
 
 	# decrement timer every second (approximate)
 	li	t0, 20
@@ -851,6 +894,8 @@ timerGameOver:
 	li	t0, 2
 	sw	t0, gameOverFlag, t1
 outTimerDecrement:
+
+# COLLECTIBLE VALUE
 	
 	# Collectibles will lose value every minute; value lost is specified on level information file
 	# 1200 ticks = one minute
@@ -866,6 +911,8 @@ lowerCollectibleValue:
 	sw	s0, collectibleValue, s1
 noLower:
 
+# PLAYER "STAMINA"
+
 	# player stamina system core
 	# used in move and special functions
 	# energy capped at 10, regenerates 1 point every tick. player may only
@@ -878,6 +925,8 @@ addEnergy:
 	addi	s0, s0, 1
 	sw	s0, playerEnergy, s1
 outAddEnergy:
+
+# PLAYER ANIMATION
 	
 	# maintain breaking state while energy hasn't yet recovered
 	lw	t0, playerEnergy
@@ -888,6 +937,10 @@ resetPlayerBreaking:
 	li	s0, 0
 	sw	s0, playerBreaking, s1
 outResetPlayerBreaking:
+
+
+# ENEMY AI
+
 
 	# enemy ai for movement should be run every 0.8s (16 ticks)
 	# enemy ai should never be run at the very start of the match
@@ -946,6 +999,9 @@ enemyAI:
 	lw	t3, explosionFlag
 	beq	t3, zero, enemyMovement
 	j	enemyExplosion
+	
+# ENEMY MOVEMENT AI
+	
 enemyMovement:
 	# establish enemy location pointer on the matrix (t5)
 	la	t1, currentLevel
@@ -1016,6 +1072,7 @@ noGameOverEnemy:
 	j	continueMoveEnemy
 repeatDecision:
 	# if too many repeat decisions are made, next enemy may be moved
+	# this check is likely obsolete
 	li	t3, 4
 	bge	s6, t3, nextEnemy
 	addi	s6, s6, 1
@@ -1036,6 +1093,9 @@ repeatDecision:
 	ecall
 	# s10 will be used to find the player
 	li	s10, 9
+	
+	# my sincerest apologies for this madness
+	# but this madness allows for randomized movement >:D
 	
 	beq	a0, zero, leftPriority
 	li	t3, 1
@@ -1147,20 +1207,28 @@ enemyPanic:
 	# and they are now both wandering aimlessly
 	sb	zero, 0(t6)
 	j	nextEnemy
+
+
+# ENEMY EXPLOSION AI PART 1
+
+
 enemyExplosion:
 	# set matrixExplosion's line and column for this enemy to 1
 	# reminder to self: do not modify s0, s1, s3 or t0
+	# should only run if enemy type is 1.
+	# since there are only enemy types 1 and 0, we can treat 1 as not 0
 	beq	s3, zero, nextEnemy
 	
 	# sfx
 	li a0, 60	# pitch
 	li a1, 300	# duration
 	li a2, 127	# instrument
-	li a3, 60	# volume
+	li a3, 127	# volume
 	li a7, 31
 	ecall
-	
+
 explodeX:
+	# the loops below set the relevant X and Y columns on explosionMatrix to 1
 	la	s4, explosionMatrix
 	li	t3, 20
 	mul	t3, s1, t3
@@ -1201,6 +1269,10 @@ nextEnemy:
 	addi	t0, t0, 1
 	j	enemyAI
 outEnemyAI:
+
+
+# PLAYER INPUT, SPECIAL AND MOVEMENT
+
 
 playerInput:
 	lw	t0, keyboardAddress
@@ -1252,17 +1324,17 @@ continueInput:
 	
 	# if the input was not in the selector, no action is performed
 	j	outInput
-	
+
+# INTERFACE ACTIONS
+
 flagPause:
 	li	t0, 1
 	sw	t0, levelPaused, t1
 	j	outInput
-
 cheatVictory:
 	li	t0, 1
 	sw	t0, victoryFlag, t1
 	j	outInput
-
 cheatLose:
 	li	t0, 2
 	sw	t0, gameOverFlag, t1
@@ -1272,6 +1344,8 @@ cheatLose:
 	# t3 will store the number that will be used to create the pointer
 	# that points to the cell towards which the character just tried to move
 	# they also update the player's state accordingly
+
+# PLAYER MOVEMENT, PART 1
 	
 moveUp:
 	# these are all similar
@@ -1310,6 +1384,8 @@ moveRt:
 	sw	s1, playerState, s2
 	beq	s0, s1, movePlayer
 	j	outInput
+
+# PLAYER SPECIAL
 	
 doSpecial:
 	# only allow special if energy is full
@@ -1399,6 +1475,9 @@ destroyBreakable_c:
 	sb	t1, 0(t4)
 	add	t4, t4, t3
 	j	playerDestroy
+	
+# PLAYER MOVEMENT, PART 2
+	
 movePlayer:
 	# only allow movement if energy is full
 	lw	t4, maxPlayerEnergy
@@ -1427,7 +1506,7 @@ continueMovement0:
 	li	a0, 98
 	li	a1, 800
 	li	a2, 9
-	li	a3, 800
+	li	a3, 127
 	li	a7, 31
 	ecall
 	
@@ -1489,6 +1568,11 @@ moveRt2:
 	sw	s0, playerPosX, t3
 	j	outInput
 outInput:
+
+
+# COLLECTIBLE CHECKS AND UPDATES
+
+
 	# enter collectible updating function (only for when the player collects every objective on screen)
 	lw	t0, collectibleCount
 	bne	t0, zero, finishColupdates
@@ -1577,12 +1661,16 @@ finishColchecks:
 	sw	t0, 0(s2)
 finishColupdates:
 
+# RENDERING PROCEDURES
+
 backgroundRender:
+	# Rendering the background again comes with the bonus of clearing the previous frame
 	mv	a0, zero
 	mv	a1, zero
 	la	a2, levelBackground
 	mv	a3, zero
 	jal	displayPrint
+
 menuRender:
 	# Menu positions for reference:
 	# Level Number: Y 70 X 29
@@ -1689,6 +1777,11 @@ menuRender:
 	li	t1, 128
 	mul	a3, t0, t1
 	jal	displayPrint
+
+
+# MAIN MATRIX FUNCTION: RENDERER/UPDATER
+
+
 mapRender:
 	# initialize level information
 	la	s0, currentLevel
@@ -1750,6 +1843,9 @@ renderWidthLoop:
 	beq	t2, t3, renderBreaking
 	li	t3, 13
 	beq	t2, t3, renderBreaking
+
+# EMPTY CELL
+
 renderEmpty:
 	# at first, the rendering functions really only did rendering, but some of them now do manipulation
 	# the reason for the is that if we get strange values on a cell we can call this as a panic button
@@ -1758,10 +1854,16 @@ renderEmpty:
 	la	a2, empty
 	jal	displayPrint
 	j	continueRW
+	
+# IMPASSABLE CELL
+
 renderUnbreakable:
 	la	a2, empty
 	jal	displayPrint
 	j	continueRW
+
+# RENDER BREAKABLES AND COLLECTIBLES
+
 renderBreakable:
 	li	t2, 2
 	sb	t2, 0(s0)
@@ -1788,8 +1890,10 @@ renderBreakableC:
 	mul	a3, t1, t2
 	jal	displayPrint
 	j	continueRW
+	
+# RENDER AN ENEMY
+	
 renderEnemy:
-	# the intricate process of enemy rendition is explained in the article
 	# needs to use t0 and t1 to find out ID of the enemy in this position and render according to state and type
 	la	s3, enemyPositions
 	li	s5, 8
@@ -1849,6 +1953,9 @@ renderTonho:
 	la	a2, enemy_tonho
 	jal	displayPrint
 	j	continueRW
+	
+# RENDER PLAYER
+	
 renderPlayer:
 	# render selector using states and the spritesheet
 	li	a3, 256
@@ -1889,6 +1996,9 @@ renderBreaking1:
 	la	a2, breaking0
 	jal	displayPrint
 	j	continueRW
+	
+# CONTINUATION
+	
 continueRW:
 	# recover tempwidth and height from memory
 	lw	t0, tempwidth
@@ -1906,6 +2016,9 @@ mapRenderEnd:
 	la	t0, explosionFlag
 	bne	t0, zero, explosionMatrixRender
 	j	outFinishExplosions
+	
+# ENEMY EXPLOSION AI PART 2: RENDERING, KILLING AND BREAKING
+
 explosionMatrixRender:
 	# s0 points to explosionMatrix and s3 to level matrix
 	la	s3, currentLevel
@@ -1964,7 +2077,6 @@ breakBreakable_c:
 	sb	t0, 0(s3)
 	j	outRenderExplosion
 outRenderExplosion:
-
 	lw	t0, tempwidth
 	lw	t1, tempheight
 continueEMRx:
@@ -2015,7 +2127,6 @@ enemyExpStateReset:
 	addi	s0, s0, 2
 	addi	t0, t0, 1
 	j	enemyExpStateReset
-
 outFinishExplosions:
 	jal	frameSwitch
 	
@@ -2028,7 +2139,17 @@ outFinishExplosions:
 	
 	addi	s11, s11, 1
 	
+	# This sleep is necessary otherwise the code runs so fast that input breaks
+	li	a7, 32
+	li	a0, 1
+	ecall
+	
 	j runtimeLoop
+
+
+# GAME OVER SCREEN
+
+
 gameOver:
 	# initial sfx
 	li	a0, 50
@@ -2093,6 +2214,9 @@ overInput:
 	li	t2, 0x072
 	beq	t1, t2, dynamicLoader
 	j	overInput
+	
+# VICTORY SCREEN
+	
 victoryScreen:
 	# sfx
 	li	a0, 70
@@ -2122,6 +2246,7 @@ victoryScreen:
 	li	a0, 500
 	li	a7, 32
 	ecall
+	# end of sfx
 	
 	# below are carbon copies of menuRender and renderBackground functions
 	# necessary because they're not callable (calling functions recursively requires using the stack and we have no clue how)
@@ -2243,13 +2368,13 @@ victoryScreen:
 	jal	frameSwitch
 	
 	# Finished rendering numbers
-	
-	# Code below is mostly placeholding
+	# A 4 second sleep before loading the next level
 
 	li	a0, 4000
 	li	a7, 32
 	ecall
 	
+	# update unlocked levels based on current level
 	lw	t0, levelNumber
 	addi	t0, t0, 1
 	lw	t1, unlockedLevels
@@ -2257,8 +2382,13 @@ victoryScreen:
 	sw	t0, unlockedLevels, t1
 noUnlocks:
 	sw	t0, levelNumber, t1
-	
+	# load next level
 	j	dynamicLoader
+	
+# CALLABLE FUNCTIONS
+
+# FRAMESWITCH
+	
 frameSwitch:
 	# frameswitch algorithm
 	# the way rendering works in this game is that the opposite frame is rendered while the current frame
@@ -2280,6 +2410,9 @@ frameSwitch:
 	xori	t2, t2, 1
 	sw	t2, 0(t1)
 	ret
+	
+# DISPLAY PRINTER (THE SINGLE RENDERING FUNCTION THAT EVERYTHING USES)
+	
 displayPrint:
 	# basic renderer function
 	# utilizes only temporaries
@@ -2356,8 +2489,12 @@ displayPrintEnd:
 	# reset a3 for safety purposes (it is only used by display print and is never reset anywhere)
 	mv	a3, zero
 	ret
+	
+# BOTTOM DROP PREVENTION AND PROGRAM FINISHER
+	
 exitProgram:
 	# exitProgram was placed way down here to prevent drops
 	li	a7, 10
 	ecall
+
 # Nirva was here >:3

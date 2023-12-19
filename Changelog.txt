@@ -1,3 +1,11 @@
+1.1.0  - 19/12/2023
+- Added music to the levels
+- level 3's music is still a placeholder
+- tickrate rework, shouldn't be noticeable
+- slight changes to sound effects
+- bug fixes
+- made the code slightly more readable (it's still painful though)
+
 1.0.0  - 19/12/2023
 - Initial release
 - Added the story screens
