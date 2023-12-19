@@ -6,13 +6,13 @@ Inspired by BadIceCream by Nitrome<br>
 ## How to run (Latest Versions)
 Open terminal from the game directory and type in the following:
 ```
-./fpgrars-x86_64-pc-windows-msvc--unb.exe main.s
+./fpgrars-x86_64-pc-windows-gnu.exe main.s
 ```
 
 ## How to run (Versions Prior to 1.1.0)
 Open terminal from the game directory and type in the following:
 ```
-./fpgrars-x86_64-pc-windows-gnu.exe main.s
+./fpgrars-x86_64-pc-windows-msvc--unb.exe main.s
 ```
 Or run the executable .bat file which does the above for you automatically
 
