@@ -1,0 +1,23 @@
+Essa pasta contém artes conceituais, ferramentas e arquivos .pdn (do paint.net) que utilizamos durante o desenvolvimento.
+
+##############################################################
+## Breve explicação sobre alguns tópicos (calouros, leiam!) ##
+##############################################################
+
+- Primeiramente, vc provavelmente já conhece, mas se não, acesse esse github: https://github.com/victorlisboa/LAMAR. Palavras não conseguem descrever o quanto ele nos ajudou nesse projeto.
+
+- Se você jogou nosso jogo, percebeu que tudo segue uma grid bem bonitinha. se você precisar dessa referência e utilizar o paint.net, tem um plugin bem legal que cria grids automaticamente pra vc, é só seguir as instruções de como instalar: https://forums.getpaint.net/topic/4175-grid-maker-plugin/
+
+- Na pasta music, o arquivo "musicrunner.s" é a nossa função de rodar música, mas fora do projeto. se você quiser testar suas próprias músicas, é só alterar o tamanho, as notas, as durações e o instrumento conforme vc quiser.
+
+- A pasta music não tem nada sobre tocar efeitos sonoros, mas é por que eles são meio que "hard-coded" na main.s, então é só procurar lá e ver como a gente fez (boa sorte)
+
+- Se você usou o conversor do Davi Patury para pegar as notas e durações de alguma música, vai perceber que ele retorna as notas no formato: "nota, duração, nota, duração, nota, duração", tipo, "40, 300, 53, 300, [...]"	. Se por alguma razão você quiser separar as notas das durações, criando duas listas separadas (como fizemos nesse projeto), eu fiz um script em python que faz exatamente isso! ele tá na pasta "music" e se chama separaNotas.py (nome criativo, eu sei).
+
+- Em alguns momentos, eu decidi fazer a música não pelo conversor do Davi, mas achando um arquivo MIDI (extensão .mid) da música. Um pessoal do semestre passado (The Assembly Gauntlet, 2023.1) tem um conversor bem legal no github deles. Além disso, se você precisar editar arquivos MIDI em um editor de música com piano roll, recomendo o MidiEditor, link:	http://www.midieditor.org/
+Ele parece meio tenebroso, mas olha, até agora eu não peguei vírus!
+
+
+E por último, se você tá lendo isso no futuro, sinta-se livre pra brincar com essas pastas pra aprender alguma coisa, e boa sorte fazendo seu próprio estilo de arte e músicas! Espero que nosso projeto te ajude de alguma forma :)
+	- Rafik, artista e designer do RadIceCream
+	19/12/2023

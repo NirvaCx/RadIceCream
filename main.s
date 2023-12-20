@@ -796,7 +796,7 @@ playNote:
 	mv	a0, t1 	# move pitch from t1 to a0
 	mv	a1, t2 	# move duration from t2 to a1
 	li	a2, 30 	# guitar instrument
-	li	a3, 100 	# volume
+	li	a3, 85 	# volume
 	ecall
 
 	# Get current time
