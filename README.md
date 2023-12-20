@@ -8,6 +8,7 @@ Open terminal from the game directory and type in the following:
 ```
 ./fpgrars-x86_64-pc-windows-gnu.exe main.s
 ```
+Or run the executable .bat file which does the above for you automatically
 
 ## How to run (Versions Prior to 1.1.0)
 Open terminal from the game directory and type in the following:
