@@ -12,7 +12,7 @@ durations = []
 
 for i in range(length):
     if i%2==0:
-        notes.append(song[i]-13)
+        notes.append(song[i])
     else:
         durations.append(song[i])
         
