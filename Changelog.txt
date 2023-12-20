@@ -1,3 +1,8 @@
+1.1.1  - 19/12/2023
+- Added Level 3 music
+- Reorganized a few folders in the source code
+- Reintroduced batch executable
+
 1.1.0  - 19/12/2023
 - Fixed FPGRARS overflow crash by changing FPGRARS version
 - Added music to the levels
