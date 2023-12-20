@@ -12,6 +12,8 @@ Open terminal from the game directory and type in the following:
 Or run the executable .bat file which does the above for you automatically
 
 ## How to run (Versions Prior to 1.1.0)
+Important note about versions prior to 1.1.0: They WILL crash after running for a certain amount of time due to an imperfection in the version of FPGRARS we used for those earlier versions. Replacing the old fpgrars version in the folder with the one used in 1.1.0 should absolutely fix this problem :)
+
 Open terminal from the game directory and type in the following:
 ```
 ./fpgrars-x86_64-pc-windows-msvc--unb.exe main.s
