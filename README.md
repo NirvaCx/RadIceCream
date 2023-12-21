@@ -26,7 +26,7 @@ Make sure you have the latest Microsoft Visual C++ Redist installed on your comp
 https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170 <br>
 
 ## Article (Work in Progress)
-https://docs.google.com/document/d/14FeMiUpzO-p7x7qS6Kqn5h73lcUuJNAL-eTsIOBgR3g/edit?usp=sharing
+See RadIceCream_Documentation.pdf in source
 
 ## Project Archive
 Earlier versions, funny placeholder images, development videos, and all sorts of other fun things.<br>
