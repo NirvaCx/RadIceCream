@@ -1,5 +1,11 @@
 .data
-# Test music: Vordt of the Boreal Valley - Dark Souls III by Motoi Sakuraba
+
+#################################
+##		  Test music:          ##
+##	Vordt of the Boreal Valley ##
+##		Dark Souls III		   ##
+##	   by Motoi Sakuraba	   ## 
+#################################
 
 songLength:
 .word	120
@@ -47,7 +53,7 @@ playNote:
 	li	a7, 31 	# MidiOut syscall
 	mv	a0, t1 	# move pitch from t1 to a0
 	mv	a1, t2 	# move duration from t2 to a1
-	li	a2, 30 	# guitar instrument
+	li	a2, 52 	# Choir instrument
 	li	a3, 85 	# volume
 	ecall
 
