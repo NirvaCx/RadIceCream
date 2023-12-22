@@ -11,7 +11,7 @@ This is important to anyone who's interested in the game's development process i
 If you want to take a look at the latest version, don't download the latest release source - instead just clone or download the main branch as we've added some documentation since the latest release.
 ## How to run (Latest Versions)
 
-Please note that the information below is for windows. You should check out FPGRARS' GitHub repository if you're on Linux or MacOS so that you can run the game in your system: https://github.com/LeoRiether/FPGRARS
+Please note that the information below is for Windows. You should check out FPGRARS' GitHub repository if you're on Linux or MacOS so that you can run the game in your system: https://github.com/LeoRiether/FPGRARS
 
 Open terminal from the game directory and type in the following:
 ```
