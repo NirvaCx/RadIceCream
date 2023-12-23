@@ -13,6 +13,8 @@ If you want to take a look at the latest version, don't download the latest rele
 
 Please note that the information below is for Windows. You should check out FPGRARS' GitHub repository if you're on Linux or MacOS so that you can run the game in your system: https://github.com/LeoRiether/FPGRARS
 
+THE .bat EXECUTABLE DOES NOT WORK ON THOSE OPERATING SYSTEMS EITHER
+
 Open terminal from the game directory and type in the following:
 ```
 ./fpgrars-x86_64-pc-windows-gnu.exe main.s
