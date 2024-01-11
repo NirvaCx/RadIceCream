@@ -2,9 +2,6 @@
 RISC-V Assembly project for Introduction to Computer Systems class at University of Brasilia<br>
 Created by Nirva Neves, Rodrigo Rafik and Mariana Simion<br>
 Inspired by BadIceCream by Nitrome<br>
-## Challenge
-Finish the game, upload the footage to youtube (Can be unlisted) and send the link to Nirva at nive.yellow@gmail.com :)
-First person to do this gets a prize.
 ## Note for future students
 This is important to anyone who's interested in the game's development process in general - The compressed release files DO NOT CONTAIN everything that's used for development and a lot of it is omitted. If you want to have a full look, always download the source of that specific release. Older releases that were not uploaded to github are in the Project Archive linked at the end of this Readme
 
