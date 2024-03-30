@@ -6,6 +6,8 @@ Inspired by BadIceCream by Nitrome<br>
 This is important to anyone who's interested in the game's development process in general - The compressed release files DO NOT CONTAIN everything that's used for development and a lot of it is omitted. If you want to have a full look, always download the source of that specific release. Older releases that were not uploaded to github are in the Project Archive linked at the end of this Readme
 
 If you want to take a look at the latest version, don't download the latest release source - instead just clone or download the main branch as we've added some documentation since the latest release.
+And finally, if you have any specific questions, feel free to ask me personally at my e-mail: nive.yellow@gmail.com
+
 ## How to run (Latest Versions)
 
 Please note that the information below is for Windows. You should check out FPGRARS' GitHub repository if you're on Linux or MacOS so that you can run the game in your system: https://github.com/LeoRiether/FPGRARS
