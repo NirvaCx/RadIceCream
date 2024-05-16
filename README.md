@@ -23,6 +23,7 @@ Open terminal from the game directory and type in the following:
 ### For Linux
 
 **LINUX USERS SHOULD DOWNLOAD THE CODE OR CLONE THE REPOSITORY**
+
 Open terminal from the game directory and run:
 ```
 ./fpgrars-linux main.s
