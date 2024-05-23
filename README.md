@@ -22,22 +22,26 @@ Open terminal from the game directory and type in the following:
 
 ### For Linux
 
+**LINUX USERS SHOULD DOWNLOAD THE CODE OR CLONE THE REPOSITORY**
+
 Open terminal from the game directory and run:
 ```
 ./fpgrars-linux main.s
 ```
-Notes: FPGRARS' MIDI is tricky on linux, and it's suggested you configure a MIDI daemon for your system. See https://wiki.archlinux.org/title/MIDI#Software_playback .
+Notes: MIDI is tricky on linux, and it's suggested you configure a MIDI daemon for your system if you want to have sound. See https://wiki.archlinux.org/title/MIDI#Software_playback .
 
 Selection of the MIDI port on FPGRARS is done with the flag `--port x` where `x` is the cardinal port number (0, 1, 2, 3).
 
 ## How to run (Versions Prior to 1.1.0)
 Important note about versions prior to 1.1.0: They WILL crash after running for a certain amount of time due to an imperfection in the version of FPGRARS we used for those earlier versions. Replacing the old fpgrars version in the folder with the one used in 1.1.0 should absolutely fix this problem :)
 
-Open terminal from the game directory and type in the following:
+Linux users will have to copy the fpgrars executable in the current source to run older versions regardless.
+
+If you didn't update the fpgrars version, just open terminal from the game directory and type in the following:
 ```
 ./fpgrars-x86_64-pc-windows-msvc--unb.exe main.s
 ```
-Or run the executable .bat file which does the above for you automatically
+Or run the executable .bat file (may not be available) which does the above for you automatically
 
 Make sure you have the latest Microsoft Visual C++ Redist installed on your computer as FPGRARS depends on it<br>
 https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170 <br>
