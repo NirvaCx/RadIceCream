@@ -1,1 +1,1 @@
-fpgrars-x86_64-pc-windows-gnu.exe main.s
+fpgrars-windows.exe main.s
